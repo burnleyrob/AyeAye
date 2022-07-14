@@ -30,7 +30,7 @@ class TestPinnate(unittest.TestCase):
         d = {'number': 1,
              'string': 'hello',
              'date': datetime.strptime("2020-01-15 10:34:12", "%Y-%m-%d %H:%M:%S"),
-             'recurse_list': [{'abc': "def"}],
+             'recurse_list': [{'abc': 'def'}],
              'recurse_dict': {'ghi': {'jkl': 'mno'}
                               },
              }

@@ -220,7 +220,7 @@ class Pinnate:
     def get_type(self):
         """
         self._attr is private,
-        so this function lets you see whether a Pinnate is made from a dict or a string from outside that Pinnate.
+        so this function lets you see whether a Pinnate is made from a dict or a list from outside that Pinnate.
         """
         
         if isinstance(self._attr, dict):
