@@ -62,3 +62,28 @@ class TestPinnate(unittest.TestCase):
         d = {'a': [[[{'b':'hello'}]]]}
         p = Pinnate(d)
         self.assertEqual('hello', p.a[0][0][0].b)
+
+    def test_top_level_list(self):
+        "test you can make a Pinnate from a top level list"
+        
+        l = ["a", "b", "c"]
+
+        p = Pinnate(l)
+
+        self.assertEqual(p[0], "a")
+        self.assertEqual(p[1], "b")
+        self.assertEqual(p[2], "c")
+
+    def test_top_level_list_of_dict(self):
+        "test you can make a Pinnate from a top level list of dictionaries"
+        
+        l = [{"first_name": "mary"}, {"last_name": "poppins"}]
+
+        p = Pinnate(l)
+
+        self.assertEqual(p[0].first_name, "mary")
+        self.assertEqual(p[1].last_name, "poppins")
+        
+
+if __name__ == "__main__":
+    unittest.main()
