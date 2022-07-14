@@ -25,12 +25,16 @@ class Pinnate:
     """
     def __init__(self, data=None):
         """
-        :param data: dictionary or dictionary encoded in json or instance of Pinnate
+        :param data: dictionary/list or dictionary/list encoded in json or instance of Pinnate
         """
         self._attr = {}
+        
         if isinstance(data, self.__class__):
             self._attr = data._attr
         elif data:
+            if isinstance(data, list):
+                self._attr = []
+            
             self.load(data, merge=False)
 
     def __unicode__(self):
@@ -116,12 +120,11 @@ class Pinnate:
 
     def load(self, data, merge=False):
         """
-        :param data: dict, list or json string
+        :param data: dict or json string
         :param merge: bool see :method:`update` if False or :method:`merge` when True.
         """
 
-        # if type(data) not in {dict, list}:
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) and not isinstance(data, list):
             data = json.loads(data)
 
         if merge:
@@ -134,35 +137,22 @@ class Pinnate:
         Extend the Pinnate with further settings. If a setting with an existing key is supplied,
         then the previous value is overwritten.
 
-        :param data: dictionary/list or dictionary/list encoded in json
+        :param data: dictionary or dictionary encoded in json
         """
-
-        #################################### this is my actual attempt ################################################
-        # if isinstance(data, dict):
-        #     for k, v in data.items():
-        #         if type(v) in {dict, list}:
-        #             self._attr[k] = Pinnate(v)
-        #         else:
-        #             self._attr[k] = v
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if type(v) in {dict, list}:
+                    self._attr[k] = Pinnate(v)
+                else:
+                    self._attr[k] = v
         
-        # # data must be a list
-        # else:
-        #     for index, element in enumerate(data):
-        #         if type(element) in {dict, list}:
-        #             self._attr[index] = Pinnate(element)
-        #         else:
-        #             self._attr[index] = element
-        
-        
-        for k, v in data.items():
-            if isinstance(v, dict):
-                self._attr[k] = Pinnate(v)
-            else:
-                self._attr[k] = v
-                if isinstance(v, list):
-                    x = v[0]
-                    w = isinstance(x, dict)
-                    y = 1
+        # data must be a list
+        else:
+            for element in data:
+                if type(element) in {dict, list}:
+                    self._attr.append(Pinnate(element))
+                else:
+                    self._attr.append(element)
 
     def merge(self, data):
         """
