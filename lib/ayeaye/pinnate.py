@@ -61,25 +61,60 @@ class Pinnate:
         @param select_fields: (list of str) to only include some fields from model.
         @return: (dict) with mixed values
         """
+        # error if this is not being called on a dict
+        if not self.get_type() is dict:
+            raise TypeError(f"as_dict() can only be called on a dict.")
+
+        r = {}
+
         if select_fields is not None:
-            r = {}
             for k in select_fields:
                 if isinstance(self._attr[k], self.__class__):
-                    v = self._attr[k].as_dict()
+                    if self._attr[k].get_type() is dict:
+                        v = self._attr[k].as_dict()
+                    else:
+                        v = self._attr[k].as_list()
                 else:
                     v = self._attr[k]
                 r[k] = v
-            return r
         else:
-            return {k: v.as_dict() if isinstance(v, self.__class__) else v \
-                    for k, v in self._attr.items()}
+            for k, v in self._attr.items():
+                if isinstance(v, self.__class__):
+                    if v.get_type() is dict:
+                        r[k] = v.as_dict()
+                    else:
+                        r[k] = v.as_list()
+                else:
+                    r[k] = v
+        return r
+
+    def as_list(self):
+        # error if this is not being called on a list
+        if not self.get_type() is list:
+            raise TypeError(f"as_list() can only be called on a list.")
+
+        r = []
+        
+        for e in self._attr:
+            if isinstance(e, self.__class__):
+                if e.get_type() is dict:
+                    r.append(e.as_dict())
+                else:
+                    r.append(e.as_list())
+            else:
+                r.append(e)
+
+        return r
 
     def as_json(self, *args, **kwargs):
         """
         @see :method:`as_dict` for params.
         @returns (str) JSON representation
         """
-        return json.dumps(self.as_dict(*args, **kwargs), default=str)
+        if self.get_type() is dict:
+            return json.dumps(self.as_dict(*args, **kwargs), default=str)
+        else:
+            return json.dumps(self.as_list(*args, **kwargs), default=str)
 
     def __getattr__(self, attr):
         if attr not in self._attr:
@@ -181,3 +216,14 @@ class Pinnate:
                             )
                     raise ValueError(msg.format(k))
                 self._attr[k] = v
+    
+    def get_type(self):
+        """
+        self._attr is private,
+        so this function lets you see whether a Pinnate is made from a dict or a string from outside that Pinnate.
+        """
+        
+        if isinstance(self._attr, dict):
+            return dict
+        else:
+            return list

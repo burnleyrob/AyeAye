@@ -30,7 +30,7 @@ class TestPinnate(unittest.TestCase):
         d = {'number': 1,
              'string': 'hello',
              'date': datetime.strptime("2020-01-15 10:34:12", "%Y-%m-%d %H:%M:%S"),
-             'recurse_list': [{'abc': {'yes': 'no'}}],
+             'recurse_list': [{'abc': "def"}],
              'recurse_dict': {'ghi': {'jkl': 'mno'}
                               },
              }
@@ -39,12 +39,8 @@ class TestPinnate(unittest.TestCase):
         expected = ('{"number": 1, "string": "hello", "date": "2020-01-15 10:34:12", '
                     '"recurse_list": [{"abc": "def"}], "recurse_dict": {"ghi": {"jkl": "mno"}}}'
                     )
-        x = p.recurse_list[0].abc.yes
-        w = isinstance(p.recurse_list[0].abc, Pinnate)
-        y = 1
-        self.assertEqual(expected, as_json)
 
-        
+        self.assertEqual(expected, as_json)
 
     def test_recursive_lists(self):
         "bug found with list inside a list"
