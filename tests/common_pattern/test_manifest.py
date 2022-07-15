@@ -189,6 +189,3 @@ class TestManifest(unittest.TestCase):
         self.assertTrue(callable(survey.bad_weather))
         msg = 'The manifest contains "survey_weather": "london_weather.json" should should be true'
         self.assertTrue(survey.bad_weather(), msg)
-
-if __name__ == "__main__":
-    unittest.main()
