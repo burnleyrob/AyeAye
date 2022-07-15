@@ -38,7 +38,11 @@ class Pinnate:
             self.load(data, merge=False)
 
     def __unicode__(self):
-        d = ', '.join([u"{}:{}".format(k, v) for k, v in self._attr.items()])
+        if isinstance(self._attr, dict):
+            d = ', '.join([u"{}:{}".format(k, v) for k, v in self._attr.items()])
+        else:
+            d = ', '.join([u"{}".format(e) for e in self._attr])
+        
         return '<Pinnate %s>' % d
 
     def __str__(self):
@@ -62,7 +66,7 @@ class Pinnate:
         @return: (dict) with mixed values
         """
         # error if this is not being called on a dict
-        if not self.get_type() is dict:
+        if not isinstance(self._attr, dict):
             raise TypeError(f"as_dict() can only be called on a dict.")
 
         r = {}
@@ -90,7 +94,7 @@ class Pinnate:
 
     def as_list(self):
         # error if this is not being called on a list
-        if not self.get_type() is list:
+        if not isinstance(self._attr, list):
             raise TypeError(f"as_list() can only be called on a list.")
 
         r = []
@@ -111,7 +115,7 @@ class Pinnate:
         @see :method:`as_dict` for params.
         @returns (str) JSON representation
         """
-        if self.get_type() is dict:
+        if isinstance(self._attr, dict):
             return json.dumps(self.as_dict(*args, **kwargs), default=str)
         else:
             return json.dumps(self.as_list(*args, **kwargs), default=str)
