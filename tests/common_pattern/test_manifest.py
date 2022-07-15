@@ -106,7 +106,7 @@ class TestManifest(unittest.TestCase):
             # just test results for one mapping (fanout) for one manifest listed file
             if engine_set.manifest_item == "z.ndjson":
                 expected = ["csv://z.ndjson.csv", "ndjson://z.ndjson.ndjson"]
-                self.assertEqual(engine_set.fanout.as_list(), expected)
+                self.assertEqual(engine_set.fanout, expected)
                 break
         else:
             raise ValueError("test item not found")
