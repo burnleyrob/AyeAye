@@ -173,40 +173,40 @@ class Pinnate:
 
     def update(self, data):
         """
-        Extend the Pinnate with further settings. If a setting with an existing key is supplied,
+        Extend the Pinnate with further settings.
+        If a list is supplied, use _integrate_list() to integrate the list.
+        If a setting with an existing key is supplied,
         then the previous value is overwritten.
-
         :param data: dictionary or dictionary encoded in json
         """
-        if isinstance(data, dict):
-            for k, v in data.items():
-                if type(v) in {dict, list}:
-                    self._attr[k] = Pinnate(v)
-                else:
-                    self._attr[k] = v
+        if isinstance(data, list):
+            self._integrate_list(data)
+            return
         
-        # data must be a list
-        else:
-            for element in data:
-                if type(element) in {dict, list}:
-                    self._attr.append(Pinnate(element))
-                else:
-                    self._attr.append(element)
+        for k, v in data.items():
+            if isinstance(v, dict) or isinstance(v, list):
+                self._attr[k] = Pinnate(v)
+            else:
+                self._attr[k] = v
 
     def merge(self, data):
         """
-        Extend the Pinnate with further settings. If a setting with an existing key is supplied,
+        Extend the Pinnate with further settings.
+        If a list is supplied, use _integrate_list() to integrate the list.
+        If a setting with an existing key is supplied,
         then the previous value is either updated (if the previous value is a dict) or overwritten
         (if the previous value is a scalar).
-
         Where corresponding values are not of compatible types, a ValueError is raised. Compatible
         means that an existing dict value must remain a dict (thus the dicts are merged), or a
         non-dict value must remain a non-dict type.
-
         :param data: dictionary or dictionary encoded in json
         """
+        if isinstance(data, list):
+            self._integrate_list(data)
+            return
+        
         for k, v in data.items():
-            if isinstance(v, dict):
+            if isinstance(v, dict) or isinstance(v, list):
                 try:
                     self._attr[k].merge(v)
                 except KeyError:
@@ -220,6 +220,17 @@ class Pinnate:
                             )
                     raise ValueError(msg.format(k))
                 self._attr[k] = v
+
+    def _integrate_list(self, data):
+        """
+        Add new elements from data to list.
+        """
+        for e in data:
+            if e not in self._attr:
+                if isinstance(e, dict) or isinstance(e, list):
+                    self._attr.append(Pinnate(e))
+                else:
+                    self._attr.append(e)
     
     def get_type(self):
         """
