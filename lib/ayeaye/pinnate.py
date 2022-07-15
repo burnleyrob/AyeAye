@@ -93,6 +93,9 @@ class Pinnate:
         return r
 
     def as_list(self):
+        """
+        @return: (list) with mixed values
+        """
         # error if this is not being called on a list
         if not isinstance(self._attr, list):
             raise TypeError(f"as_list() can only be called on a list.")
@@ -223,7 +226,9 @@ class Pinnate:
 
     def _integrate_list(self, data):
         """
-        Add new elements from data to list.
+        Add new elements from data to self._attr.
+
+        @param data: (list)
         """
         for e in data:
             if e not in self._attr:
@@ -237,7 +242,6 @@ class Pinnate:
         self._attr is private,
         so this function lets you see whether a Pinnate is made from a dict or a list from outside that Pinnate.
         """
-        
         if isinstance(self._attr, dict):
             return dict
         else:
