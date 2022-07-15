@@ -39,7 +39,6 @@ class TestPinnate(unittest.TestCase):
         expected = ('{"number": 1, "string": "hello", "date": "2020-01-15 10:34:12", '
                     '"recurse_list": [{"abc": "def"}], "recurse_dict": {"ghi": {"jkl": "mno"}}}'
                     )
-
         self.assertEqual(expected, as_json)
 
     def test_recursive_lists(self):
