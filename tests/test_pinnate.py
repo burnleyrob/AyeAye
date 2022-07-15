@@ -84,7 +84,32 @@ class TestPinnate(unittest.TestCase):
 
         self.assertEqual(p[0].first_name, "mary")
         self.assertEqual(p[1].last_name, "poppins")
+
+    def test_merge_dict(self):
+        "test you can merge a dict into a Pinnate made from a dict"
+
+        first_name = {"first_name": "mary"}
+        p = Pinnate(first_name)
         
+        last_name = {"last_name": "poppins"}
+        p.merge(last_name)
+
+        self.assertEqual(p.first_name, "mary")
+        self.assertEqual(p.last_name, "poppins")
+
+    def test_merge_list(self):
+        "test you can merge a list into a Pinnate made from a list"
+
+        l_one = [1, 2]
+        p = Pinnate(l_one)
+
+        l_two = [2, 3]
+        p.merge(l_two)
+
+        self.assertEqual(p[0], 1)
+        self.assertEqual(p[1], 2)
+        self.assertEqual(p[2], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
