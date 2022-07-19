@@ -86,30 +86,31 @@ class TestPinnate(unittest.TestCase):
         self.assertEqual(p[0].first_name, "mary")
         self.assertEqual(p[1].last_name, "poppins")
 
-    def test_merge_dict(self):
-        "test you can merge a dict into a Pinnate made from a dict"
+    def test_update_dict(self):
+        "test you can update an existing dict into a Pinnate made from a dict"
 
         first_name = {"first_name": "mary"}
         p = Pinnate(first_name)
 
         last_name = {"last_name": "poppins"}
-        p.merge(last_name)
+        p.update(last_name)
 
         self.assertEqual(p.first_name, "mary")
         self.assertEqual(p.last_name, "poppins")
 
-    def test_merge_list(self):
-        "test you can merge a list into a Pinnate made from a list"
+    def test_update_list(self):
+        "test you can update a list into a Pinnate made from a list"
 
         l_one = [1, 2]
         p = Pinnate(l_one)
 
         l_two = [2, 3]
-        p.merge(l_two)
+        p.update(l_two)
 
         self.assertEqual(p[0], 1)
         self.assertEqual(p[1], 2)
-        self.assertEqual(p[2], 3)
+        self.assertEqual(p[2], 2)
+        self.assertEqual(p[3], 3)
 
     def test_top_level_iterator(self):
         "a list at the top level makes the Pinnate behave like a normal list"
@@ -120,8 +121,28 @@ class TestPinnate(unittest.TestCase):
         self.assertEqual("abc", joined_values)
         self.assertFalse(isinstance(p, list), "It's a Pinnate, not a list")
 
+        # same behaviour at 2nd level
         px = Pinnate({"xx": ["a", "b", "c"]})
+        joined_values = "".join(px.xx)
+        self.assertEqual("abc", joined_values)
         self.assertIsInstance(px.xx, list, "Second level really is a list")
+
+    def test_late_construction(self):
+        "Pinnate becomes a list or dict or set but not during construction"
+        # list
+        p = Pinnate()
+        p.append("x")
+        self.assertEqual("x", p[0])
+
+        # set
+        p = Pinnate()
+        p.add("x")
+        self.assertIn("x", p)
+
+        # dict
+        p = Pinnate()
+        p.x = "y"
+        self.assertEqual(p["x"], "y")
 
 
 if __name__ == "__main__":
