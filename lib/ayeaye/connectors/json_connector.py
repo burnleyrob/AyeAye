@@ -3,6 +3,8 @@ Created on 15 Apr 2020
 
 @author: si
 """
+
+import io
 import json
 
 from ayeaye.connectors.base import AccessMode, FileBasedConnector
@@ -106,10 +108,27 @@ class JsonConnector(FileBasedConnector):
 
         # Data is written to beginning of file (it might be readwrite or already written to);
         # write to disk immediately (i.e. flush); @see :meth:`connect`.
-        self._file_handle.seek(0)
+
+        try:
+            self._file_handle.seek(0)
+        except io.UnsupportedOperation:
+            # not supported by some modifiers. @see :class:`AbstractEngineTypeModifier`
+            # silently skip as they are unlikely to be leaving old parts of the file
+            # around when it's opened in write mode.
+            # There is a warning in :class:`SmartOpenModifier` when S3 + READWRITE is used
+            pass
+
         self._file_handle.write(as_json)
+
         # truncate rest of the file as the previous contents might have been longer
-        self._file_handle.truncate()
+        try:
+            self._file_handle.truncate()
+        except io.UnsupportedOperation:
+            # not supported by some modifiers. @see :class:`AbstractEngineTypeModifier`
+            # silently skip as they are unlikely to be leaving old parts of the file
+            # around when it's opened in write mode.
+            pass
+
         self._file_handle.flush()
 
     data = property(fget=_data_read, fset=_data_write)

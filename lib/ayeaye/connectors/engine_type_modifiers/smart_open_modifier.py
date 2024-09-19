@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import os
+import warnings
 
 try:
     from smart_open import open as smart_open
@@ -7,7 +8,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-from ayeaye.connectors.base import FileBasedConnector, FilesystemEnginePattern
+from ayeaye.connectors.base import AccessMode, FileBasedConnector, FilesystemEnginePattern
 from ayeaye.connectors.engine_type_modifiers.abstract_modifier import AbstractEngineTypeModifier
 from ayeaye.connectors.engine_type_modifiers.utils import s3_pattern_match
 from ayeaye.ignition import EngineUrlCase, EngineUrlStatus
@@ -59,7 +60,7 @@ class SmartOpenEnginePattern(FilesystemEnginePattern):
             for c in content:
                 engine_file = c["Key"]
                 if matcher(engine_file):
-                    engine_url.append(f"{engine_type}://{engine_file}")
+                    engine_url.append(f"{engine_type}://{bucket_name}/{engine_file}")
 
             continuation_token = response.get("NextContinuationToken", None)
             if continuation_token:
@@ -141,6 +142,7 @@ class SmartOpenModifier(AbstractEngineTypeModifier):
         """
         Overrides :meth:`FilesystemConnector.connect` with one using Smart Open's open.
         """
+
         smart_open_kwargs = {}
         if "gz" in self.requested_modifier_labels:
             smart_open_kwargs["compression"] = ".gz"
@@ -150,6 +152,13 @@ class SmartOpenModifier(AbstractEngineTypeModifier):
         if self._s3_resource:
             # first arg is always the file path. Pre-fix this for smart open
             args = tuple(["s3://" + args[0]] + list(args[1:]))
+
+            if self.access == AccessMode.READWRITE:
+                msg = (
+                    "Smart_open operations on S3 don't support .truncate or .seek so READWRITE"
+                    " operations might not work as expected."
+                )
+                warnings.warn(msg)
 
         return smart_open(*args, **kwargs, **smart_open_kwargs)
 

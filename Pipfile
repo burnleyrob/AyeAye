@@ -14,6 +14,7 @@ boto3 = "*"
 sphinx = "*"
 pydata-sphinx-theme = "*"
 sphinx-design = "*"
+black = "*"
 
 [packages]
 ndjson = "*"

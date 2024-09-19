@@ -3,6 +3,7 @@ Created on 14 Jan 2020
 
 @author: si
 """
+
 import copy
 import csv
 
@@ -178,8 +179,6 @@ class CsvConnector(FileBasedConnector):
                         "can't be used in WRITE mode."
                     )
                     raise ValueError(msg)
-
-                self.auto_create_directory()
 
                 FileBasedConnector.connect(self)
 

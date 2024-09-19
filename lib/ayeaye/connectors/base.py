@@ -439,6 +439,11 @@ class FileBasedConnector(DataConnector):
                 self.file_size = self._get_file_size()
 
             elif self.access == AccessMode.WRITE:
+
+                # More intuitive UX to create paths in output datasets. This could depend on a flag.
+                # Also in RW mode.
+                self.auto_create_directory()
+
                 file_mode = "w" + self.file_mode
                 self._file_handle = self._open(
                     self.file_path,
@@ -447,6 +452,10 @@ class FileBasedConnector(DataConnector):
                     **self.write_mode_open_args,
                 )
             elif self.access == AccessMode.READWRITE:
+
+                # also in write mode
+                self.auto_create_directory()
+
                 # this is a tricky mode because of flushes, truncates and opening a file
                 # which may or may not exist.
                 if self.datasource_exists:

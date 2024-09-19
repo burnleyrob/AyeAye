@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.0.67] - 2024-09-19
+
+### Fixed
+- wildcards in S3 patterns failed to return the bucket name as part of the engine_url
+
+### Updated
+- warn if readwrite mode is used with S3 files as it isn't cleanly supported (.truncate and .seek) are missing from smart open
+- all file based connectors (subs of `FileBasedConnector`) will now auto create directories on writing a file. This was previously just done by the CSV connector is is now consistent.
+
 ## [0.0.66] - 2024-07-26
 
 ### Added
