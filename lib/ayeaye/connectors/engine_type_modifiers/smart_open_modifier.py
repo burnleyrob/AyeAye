@@ -160,6 +160,16 @@ class SmartOpenModifier(AbstractEngineTypeModifier):
                 )
                 warnings.warn(msg)
 
+                # # this needs more thought. Leaving it commented out to remind me
+                # # r+ or rt+ or rb+ are all valid for normal python files but not smart open
+                # # work around this for smart open.
+                # args = list(args)
+                # if args[1].endswith("+"):
+                #     args[1] = args[1].replace("+", "")
+                #
+                # if "r" in args[1]:
+                #     args[1] = args[1].replace("r", "w")
+
         return smart_open(*args, **kwargs, **smart_open_kwargs)
 
     @property

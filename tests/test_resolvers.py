@@ -4,6 +4,8 @@ import unittest
 from ayeaye.connect_resolve import ConnectorResolver, connector_resolver
 from ayeaye.connect import Connect
 from ayeaye.connectors.csv_connector import CsvConnector
+from ayeaye.connectors.placeholder import PlaceholderDataConnector
+from ayeaye.connectors.restful_connector import RestfulConnector
 from ayeaye.connectors.uncooked_connector import UncookedConnector
 from ayeaye.ignition import Ignition, EngineUrlCase, EngineUrlStatus
 from ayeaye.model import Model
@@ -462,3 +464,27 @@ class TestResolve(unittest.TestCase):
         )
         expected = "postgresql://db_user:secret_password@db.host/animals"
         self.assertEqual(expected, db_dsn, msg)
+
+    def test_connect_resolves_to_nothing(self):
+        """
+        It can be useful to disable a dataset by resolving it into the Placeholder.
+        """
+
+        class RedLists:
+            endangered_animals = Connect(engine_url="{api}")
+
+            def __init__(self):
+                # mimic how the descriptor in :class:`Connect` works.
+                self._connections = {}
+
+        # normal usage
+        with connector_resolver.context(api="https://nature.api/v1.0/"):
+            r = RedLists()
+            self.assertEqual("https://nature.api/v1.0/", r.endangered_animals.engine_url)
+            self.assertIsInstance(r.endangered_animals, RestfulConnector)
+
+        # resolved to nothing
+        with connector_resolver.context(api=""):
+            r = RedLists()
+            self.assertEqual("", r.endangered_animals.engine_url)
+            self.assertIsInstance(r.endangered_animals, PlaceholderDataConnector)

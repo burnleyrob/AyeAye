@@ -9,9 +9,11 @@ from .json_connector import JsonConnector
 from .kafka_connector import KafkaConnector
 from .ndjson_connector import NdjsonConnector
 from .parquet_connector import ParquetConnector
+from .placeholder import PlaceholderDataConnector
 from .restful_connector import RestfulConnector, RestfulConnectorConnectionError
 from .sqlalchemy_database import SqlAlchemyDatabaseConnector
 from .uncooked_connector import UncookedConnector
+
 
 from ayeaye.ignition import Ignition, EngineUrlCase, EngineUrlStatus
 from ayeaye.connectors.engine_type_modifiers import engine_type_modifier_factory
@@ -102,6 +104,12 @@ def connector_factory(engine_url):
             # Full resolve not available yet. It could be possible to use a partially
             # resolved url if this current behaviour isn't good enough.
             pass
+
+    if engine_url is None or engine_url == "":
+        # engine_url won't ever resolve to something with engine_type_separator in it.
+        # It might be set later. At which point this :func:`connector_factory` would be
+        # called again.
+        return PlaceholderDataConnector
 
     if engine_type_separator in engine_url:
         engine_type = engine_url.split(engine_type_separator, 1)[0] + engine_type_separator

@@ -88,6 +88,8 @@ class FilesystemEnginePattern(AbstractExpandEnginePattern):
 class DataConnector:
     # must be defined by subclasses. Str or list of str of engine_types supported by
     # the connector. e.g. engine_type = "ndjson://"
+    # Exception here is :class:`PlaceholderDataConnector` which isn't a real connector
+    # so this isn't really an exception
     engine_type = None
 
     # wildcards can be expanded by subclasses to match multiple data sources which each become
@@ -171,7 +173,10 @@ class DataConnector:
             # no problem if not resolvable yet
             pass
 
-        if isinstance(engine_url, str):
+        # the engine_type check is for DataConnector subclasses that don't define this class
+        # variable. :class:`PlaceholderDataConnector` is the only expected one of these. It is used
+        # to represent missing engine_urls so these can't have an engine type.
+        if isinstance(engine_url, str) and self.engine_type is not None:
             engine_type = (
                 [self.engine_type] if isinstance(self.engine_type, str) else self.engine_type
             )
@@ -359,7 +364,7 @@ class FileBasedConnector(DataConnector):
     optional_engine_url_args = ["encoding"]  # list of str
     default_character_encoding = None
     write_mode_open_args = {}
-    # files will be opened in text mode
+    # default is for files to be opened in text mode
     file_mode = "t"
     engine_pattern_expander_cls = FilesystemEnginePattern
 

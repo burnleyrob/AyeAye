@@ -4,7 +4,6 @@ from enum import Enum
 from ayeaye.connectors import connector_factory
 from ayeaye.connectors.base import AbstractExpandEnginePattern
 from ayeaye.connectors.multi_connector import MultiConnector
-from ayeaye.connectors.placeholder import PlaceholderDataConnector
 
 
 class Connect:
@@ -140,6 +139,11 @@ class Connect:
         return c
 
     def __get__(self, instance, instance_class):
+        """
+        Use a descriptor to keep the instantiated dataset's access (subclass of
+        :class:`DataConnector`). The :class:`ayeaye.Connect` class is a vehicle to the
+        instantiation of the the `DataConnector`.
+        """
         if instance is None:
             # class method called.
             # This means `self` is currently an attribute of the class (so NOT an instance
@@ -194,17 +198,12 @@ class Connect:
         if callable(engine_url):
             engine_url = engine_url()
 
-        if engine_url is None:
-            # engine_url not yet available
-            connector_cls = PlaceholderDataConnector
-
+        if isinstance(engine_url, list):
+            # compile time list of engine_url strings
+            # might be callable or a dict or set in the future
+            connector_cls = MultiConnector
         else:
-            if isinstance(engine_url, list):
-                # compile time list of engine_url strings
-                # might be callable or a dict or set in the future
-                connector_cls = MultiConnector
-            else:
-                connector_cls = connector_factory(engine_url)
+            connector_cls = connector_factory(engine_url)
 
         # Make an independent copy of relay_kwargs because these come from class variables
         # so could be resolved again under a different context.

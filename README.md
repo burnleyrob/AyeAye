@@ -84,6 +84,8 @@ Extra dependencies for API usage within Aye-aye models can be installed like thi
 
 ```shell
 pipenv install "ayeaye[api]"
+ or multiple
+pipenv install "ayeaye[api,aws,compression]"
 ```
 
 | Label | Functionality |

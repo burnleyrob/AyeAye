@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.0.68] - 2024-09-25
+
+### Updated
+- Made it possible for resolver context varibles to result in an empty engine_url. This results
+in a `PlaceholderDataConnector`. This can be useful in unittests to switch off datasources.
+
 ## [0.0.67] - 2024-09-19
 
 ### Fixed

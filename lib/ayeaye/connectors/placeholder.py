@@ -8,6 +8,8 @@ class PlaceholderDataConnector(DataConnector):
     another subclass of DataConnector.
     """
 
+    # The `PlaceholderDataConnector` can't be a registered connector because it doesn't
+    # declare the engine_types it supports.
     engine_type = None
 
     @property
