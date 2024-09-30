@@ -1,6 +1,7 @@
 """
 Run :class:`ayeaye.PartitionedModel` models across multiple operating system processes.
 """
+
 from multiprocessing import Process, Queue
 import sys
 import traceback
@@ -201,21 +202,22 @@ class LocalProcessPool(AbstractProcessPool):
         # For more detail see unittest TestRuntimeMultiprocess.test_resolver_context_not_inherited
         connector_resolver.brutal_reset()
 
-        with connector_resolver.context(**context_kwargs):
-            # send logs from the sub-task running in separate Process back to the parent down the queue
-            q_logger = QueueLogger(log_prefix=f"Task ({worker_id})", log_queue=returns_queue)
+        # send logs from the sub-task running in separate Process back to the parent down the queue
+        q_logger = QueueLogger(log_prefix=f"Task ({worker_id})", log_queue=returns_queue)
 
-            while True:
-                task_message = subtasks_queue.get()
+        while True:
+            task_message = subtasks_queue.get()
 
-                # None on queue means end process as all work has been completed
-                if task_message is None:
-                    break
+            # None on queue means end process as all work has been completed
+            if task_message is None:
+                break
 
-                assert isinstance(task_message, TaskPartition)
+            assert isinstance(task_message, TaskPartition)
 
-                if task_message.method_kwargs is None:
-                    task_message.method_kwargs = {}
+            if task_message.method_kwargs is None:
+                task_message.method_kwargs = {}
+
+            with connector_resolver.context(**context_kwargs, **task_message.additional_context):
 
                 model = task_message.model_cls(**task_message.model_construction_kwargs)
                 model.set_logger(q_logger)

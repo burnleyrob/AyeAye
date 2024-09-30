@@ -197,6 +197,29 @@ class ModelRunnerModel(ayeaye.PartitionedModel):
         self.log(msg)
 
 
+class ModelContextExample(ayeaye.PartitionedModel):
+    non_existant_data = ayeaye.Connect(engine_url="file://{outer_context}/{inner_context}")
+
+    def build(self):
+        pass
+
+    def partition_slice(self, _):
+        sub_tasks = []
+        for base_number in range(3):
+            tp = TaskPartition(
+                model_cls=self.__class__,
+                method_name="do_some_work",
+                method_kwargs={"base_number": base_number},
+                additional_context={"inner_context": str(base_number)},
+            )
+            sub_tasks.append(tp)
+
+        return sub_tasks
+
+    def do_some_work(self, base_number):
+        self.log(f"task:{base_number} sees engine_url: {self.non_existant_data.engine_url}")
+
+
 class TestPartitionedModel(unittest.TestCase):
     def setUp(self):
         self._working_directory = None
@@ -417,3 +440,31 @@ class TestPartitionedModel(unittest.TestCase):
             m.go()
 
         # this is a regression check. Won't get here if it's locking up when there are no subtasks.
+
+    def test_sub_task_context(self):
+        """
+        A model produces subtasks that share a common context but also have their own context.
+        """
+
+        for max_concurrent_tasks in [1, 4]:
+            # slightly different execution within ayeaye.Model when only one
+            # concurrent task so execute both.
+            external_log = StringIO()
+
+            build_context = {"outer_context": "A"}
+            with ayeaye.connector_resolver.context(**build_context):
+                m = ModelContextExample()
+                m.set_logger(external_log)
+                m.log_to_stdout = False
+                m.runtime.max_concurrent_tasks = max_concurrent_tasks
+                m.go()
+
+            external_log.seek(0)
+            all_the_logs = external_log.read()
+
+            for expected_snippet in [
+                "task:0 sees engine_url: file://A/0",
+                "task:1 sees engine_url: file://A/1",
+                "task:2 sees engine_url: file://A/2",
+            ]:
+                self.assertIn(expected_snippet, all_the_logs, f"Can't find - {expected_snippet}")

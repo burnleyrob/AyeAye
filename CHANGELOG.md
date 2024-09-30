@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.0.69] - 2024-09-30
+
+### Added
+- TaskPartition.additional_context so tasks can run with differing resolver contexts to their parent.
+
+### Updated
+- (kind of a fix) ayeaye.Model.close_datasets only closes datasets that are already open
+
 ## [0.0.68] - 2024-09-25
 
 ### Updated

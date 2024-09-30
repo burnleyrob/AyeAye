@@ -2,7 +2,6 @@ from collections import namedtuple, defaultdict
 from datetime import datetime
 from enum import Enum
 from time import time
-import warnings
 
 import ayeaye
 from ayeaye.exception import SubTaskFailed
@@ -145,11 +144,15 @@ class Model:
 
     def datasets(self):
         """
+        Find all :class:`DataConnector` object, both those made directly (not recommended practice)
+        and those built by :class:`ayeaye.Connect`.
+
         :returns (dict) of dataset connections for this model.
                 key is class variable name
                 value is :class:`ayeaye.DataConnector`
         """
         # find :class:`ayeaye.Connect` connections to datasets
+
         connections = {}
         for obj_name in dir(self):
             obj = getattr(self, obj_name)
@@ -158,13 +161,42 @@ class Model:
 
         return connections
 
+    def open_datasets(self):
+        """
+        The problem with :meth:`datasets` is that it connects all the datasets and
+        resolves all the context. So the act of closing all datasets was opening them
+        first.
+
+        This method only finds those :class:`DataConnector` object built by :class:`ayeaye.Connect`.
+
+        :returns (dict) of dataset connections for this model that are currently connected.
+                key is class variable name
+                value is :class:`ayeaye.DataConnector`
+        """
+        datasets = {}
+        for ds_name, ds_connect in self.__class__.connects().items():
+
+            # `ds_connect._parent_model == self` because the class could have multiple instances
+            # which share a `Connect` but not the resulting subclass of :class:`DataConnector`.
+            if ds_connect._parent_model is not None and ds_connect._parent_model == self:
+
+                # _parent_model is set when the dataset is accessed by the descriptor
+                # :meth:`Connect.__get__`
+                #
+                # getting the `Connect` will prepare the connection and produce a dataset
+                ds = getattr(self, ds_name)
+                if ds.is_connected:
+                    datasets[ds_name] = ds
+
+        return datasets
+
     def close_datasets(self):
         """
         Call :meth:`close_connection` on all datasets.
         """
-        for connection in self.datasets().values():
-            if connection.is_connected:
-                connection.close_connection()
+
+        for dataset_connection in self.open_datasets().values():
+            dataset_connection.close_connection()
 
     def set_logger(self, logger):
         """
@@ -554,6 +586,13 @@ class PartitionedModel(Model):
 
             subtasks_complete = 0
             for task in task_definitions:
+
+                resolver_context = None
+                if task.additional_context:
+                    # this will be overlaid onto any context that is already in play
+                    resolver_context = connector_resolver.context(**task.additional_context)
+                    resolver_context.start()
+
                 # re-create self as a new instance model. This keeps single process mode insync
                 # with the `process_pool` mode.
                 m = task.model_cls(**task.model_construction_kwargs)
@@ -575,6 +614,10 @@ class PartitionedModel(Model):
                     subtask_kwargs=task.method_kwargs,
                     subtask_return_value=subtask_return_value,
                 )
+
+                if resolver_context is not None:
+                    resolver_context.finish()
+
                 self.log_progress(subtasks_complete / subtasks_count)
 
         else:

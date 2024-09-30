@@ -87,6 +87,14 @@ class FavouriteColours(ayeaye.Model):
         self.log("Done!")
 
     def post_build_check(self):
+
+        if (
+            not self.favourites_summary.datasource_exists
+            or not self.favourites_summary.data.as_native()
+        ):
+            self.log("Output file not found or contains no data", "ERROR")
+            return False
+
         error_message = (
             "Total days in input doesn't match total days in output. Input has {} "
             "days and output has {} days."

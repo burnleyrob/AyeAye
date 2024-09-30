@@ -11,8 +11,8 @@ from examples.favourite_colours import FavouriteColours
 from examples.poisonous_animals import PoisonousAnimals
 from examples.manifest_mapper import AustralianAnimals
 
-EXAMPLE_MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'examples')
-EXAMPLE_DATA = os.path.normpath(os.path.join(EXAMPLE_MODELS_DIR, 'data'))
+EXAMPLE_MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "examples")
+EXAMPLE_DATA = os.path.normpath(os.path.join(EXAMPLE_MODELS_DIR, "data"))
 
 
 class TestExamples(unittest.TestCase):
@@ -49,7 +49,9 @@ class TestExamples(unittest.TestCase):
 
         external_log.seek(0)
         all_the_logs = external_log.read()
-        expected = 'In Australia you could find Blue ringed octopus,Box jellyfish,Eastern brown snake'
+        expected = (
+            "In Australia you could find Blue ringed octopus,Box jellyfish,Eastern brown snake"
+        )
         self.assertIn(expected, all_the_logs)
 
     def test_favourite_colours_build_sample_data(self):
@@ -66,7 +68,7 @@ class TestExamples(unittest.TestCase):
         output_encoding = m.favourites_summary.encoding
         m.close_datasets()
 
-        with open(output_file, 'r', encoding=output_encoding) as f:
+        with open(output_file, "r", encoding=output_encoding) as f:
             output_data = json.load(f)
 
         # check Blue which has dates 2020-01-01 - 2020-02-15
@@ -91,7 +93,7 @@ class TestExamples(unittest.TestCase):
         external_log = StringIO()
         m.set_logger(external_log)
 
-        m.favourite_colours = ayeaye.Connect(engine_url='csv://data/favourite_colours_bad_data.csv')
+        m.favourite_colours = ayeaye.Connect(engine_url="csv://data/favourite_colours_bad_data.csv")
         m.favourites_summary.update(engine_url=f"json://{output_file}")
 
         # There are two issues.
@@ -100,7 +102,7 @@ class TestExamples(unittest.TestCase):
         m.close_datasets()  # reset file pointers
         external_log.seek(0)
         all_the_logs = external_log.read()
-        expected = 'This model is only designed to work with data from a single year.'
+        expected = "This model is only designed to work with data from a single year."
         self.assertIn(expected, all_the_logs)
 
         # (ii) conservation of value - total number of days in the output should match the number of
@@ -111,14 +113,12 @@ class TestExamples(unittest.TestCase):
         self.assertFalse(m.post_build_check(), "favourite_colours_bad_data.csv should fail.")
         external_log.seek(0)
         all_the_logs = external_log.read()
-        expected = "Total days in input doesn't match total days in output."
+        expected = "Output file not found or contains no data"
         self.assertIn(expected, all_the_logs)
 
     def test_australian_animal_mapper(self):
 
-        c = {'input_path': EXAMPLE_DATA,
-             'output_path': self.working_directory()
-             }
+        c = {"input_path": EXAMPLE_DATA, "output_path": self.working_directory()}
 
         with ayeaye.connector_resolver.context(**c):
             m = AustralianAnimals()
@@ -126,10 +126,10 @@ class TestExamples(unittest.TestCase):
             m.go()
 
         # two files will be built, only one is checked
-        poisonous_output = os.path.join(c['output_path'], 'australian_poisonous_animals.json')
+        poisonous_output = os.path.join(c["output_path"], "australian_poisonous_animals.json")
         with open(poisonous_output) as f:
             # just as text, don't de-serialise the JSON
             poisonous = f.read()
 
-        self.assertIn('Box jellyfish', poisonous)
-        self.assertNotIn('Arizona Bark Scorpion', poisonous)
+        self.assertIn("Box jellyfish", poisonous)
+        self.assertNotIn("Arizona Bark Scorpion", poisonous)
