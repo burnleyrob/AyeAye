@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.0.70] - 2024-10-01
+
+### Fixed
+- LocalProcessPool was attempting to set ayeaye.PartitionedModel specifics on ayeaye.Model
+
 ## [0.0.69] - 2024-09-30
 
 ### Added

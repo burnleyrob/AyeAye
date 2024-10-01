@@ -6,6 +6,7 @@ from multiprocessing import Process, Queue
 import sys
 import traceback
 
+import ayeaye
 from ayeaye.connect_resolve import connector_resolver
 from ayeaye.runtime.task_message import TaskComplete, TaskFailed, TaskLogMessage, TaskPartition
 
@@ -226,10 +227,10 @@ class LocalProcessPool(AbstractProcessPool):
                 # the parent as only the parent is joined to a terminal.
                 model.log_to_stdout = False
 
-                model.runtime.worker_id = worker_id
-                model.runtime.total_workers = total_workers
-
-                model.partition_initialise(**task_message.partition_initialise_kwargs)
+                if isinstance(model, ayeaye.PartitionedModel):
+                    model.runtime.worker_id = worker_id
+                    model.runtime.total_workers = total_workers
+                    model.partition_initialise(**task_message.partition_initialise_kwargs)
 
                 # TODO - :meth:`log` for the worker processes should be connected back to the parent
                 # with a queue or pipe and it shouldn't be using stdout
