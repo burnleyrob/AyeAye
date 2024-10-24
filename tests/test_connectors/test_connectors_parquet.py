@@ -62,4 +62,6 @@ class TestParquetConnector(unittest.TestCase):
         p = c.as_pandas()
 
         self.assertIsInstance(p, pd.DataFrame)
-        self.assertEqual("Alice", p["name"][0], "Can't find expected value in Pandas dataframe")
+        self.assertEqual(
+            "Alice", p["name"].iloc[0], "Can't find expected value in Pandas dataframe"
+        )
