@@ -7,8 +7,8 @@ from ayeaye.connectors.multi_connector import MultiConnector
 
 from . import TEST_DATA_PATH
 
-EXAMPLE_CSV_MICE = os.path.join(TEST_DATA_PATH, "mice.csv")
-EXAMPLE_CSV_SQUIRRELS = os.path.join(TEST_DATA_PATH, "squirrels.csv")
+EXAMPLE_CSV_MICE = os.path.join(TEST_DATA_PATH, "mice_no_heading.csv")
+EXAMPLE_CSV_SQUIRRELS = os.path.join(TEST_DATA_PATH, "squirrels_no_heading.csv")
 
 
 class TestMultiConnectors(unittest.TestCase):
@@ -39,32 +39,46 @@ class TestMultiConnectors(unittest.TestCase):
     def test_multi_connector_passes_args(self):
         """
         kwargs given to Connect should be passed to each DataConnection created by multi-connect.
+        Using two connectors, one with explicit engine urls and one with a wildcard, they should
+        be equivalent.
         """
-        # header-less CSVs
-        c = MultiConnector(
+        field_names = ["common_name", "scientific_name", "geo_distribution"]
+
+        # explicitly giving each engine_url in a list
+        connector_explicit = MultiConnector(
             engine_url=["csv://" + EXAMPLE_CSV_MICE, "csv://" + EXAMPLE_CSV_SQUIRRELS],
             access=ayeaye.AccessMode.READ,
-            field_names=["common_name", "scientific_name", "geo_distribution"],
+            field_names=field_names,
         )
-        rodents = []
-        for cx in c:
-            rodents.extend([r.as_dict() for r in cx])
+
+        # Using a wildcard to reference multiple datasets.
+        # NOTE This test assumes that the order of the sequence of engine urls found from the
+        # wildcard is deterministic.
+        connector_wildcard = ayeaye.Connect(
+            engine_url=f"csv://{TEST_DATA_PATH}/*_no_heading.csv",
+            access=ayeaye.AccessMode.READ,
+            field_names=field_names,
+        )
 
         expected_line_0 = {
             "common_name": "Yellow-necked mouse",
             "scientific_name": "Apodemus flavicollis",
             "geo_distribution": "Europe",
         }
-
         expected_line_3 = {
             "common_name": "American red squirrel",
             "scientific_name": "Tamiasciurus hudsonicus",
             "geo_distribution": "North America",
         }
 
-        self.assertEqual(5, len(rodents))
-        self.assertEqual(expected_line_0, rodents[0])
-        self.assertEqual(expected_line_3, rodents[3])
+        for c in [connector_explicit, connector_wildcard]:
+            rodents = []
+            for cx in c:
+                rodents.extend([r.as_dict() for r in cx])
+
+            self.assertEqual(5, len(rodents))
+            self.assertEqual(expected_line_0, rodents[0])
+            self.assertEqual(expected_line_3, rodents[3])
 
     def test_multi_connector_by_engine_url(self):
         """
@@ -80,7 +94,7 @@ class TestMultiConnectors(unittest.TestCase):
 
         dataset = c[engine_0]
         # check access to any dataset property
-        self.assertTrue(dataset.engine_params.file_path.endswith("data/mice.csv"))
+        self.assertTrue(dataset.engine_params.file_path.endswith("data/mice_no_heading.csv"))
         self.assertEqual(2, len(c))
 
     def test_wildcards(self):
@@ -89,7 +103,7 @@ class TestMultiConnectors(unittest.TestCase):
         See related test :meth:`TestResolve.test_wildcard_with_resolver`
         """
         search_path = os.path.join(TEST_DATA_PATH, "m*.?sv")
-        msg = "expected mice.csv and monkeys.tsv"
+        msg = "expected mice_no_heading.csv and monkeys.tsv"
 
         wildcard_connector = ayeaye.Connect(engine_url="file://" + search_path)
 
@@ -99,7 +113,7 @@ class TestMultiConnectors(unittest.TestCase):
 
         self.assertEqual(2, len(resolved_connectors), msg)
         files = [file_path.split(os.path.sep)[-1] for file_path in resolved_connectors]
-        self.assertIn("mice.csv", files, msg)
+        self.assertIn("mice_no_heading.csv", files, msg)
         self.assertIn("monkeys.tsv", files, msg)
 
     def test_multi_connector_duplicate_engine_url(self):
@@ -118,11 +132,11 @@ class TestMultiConnectors(unittest.TestCase):
         """
         Multiple engine_urls resolve into the same thing so should return a single connector.
         """
-        engine_url = "csv://" + EXAMPLE_CSV_MICE.replace("mice.csv", "{some_file}")
+        engine_url = "csv://" + EXAMPLE_CSV_MICE.replace("mice_no_heading.csv", "{some_file}")
 
         c = MultiConnector(engine_url=[], access=ayeaye.AccessMode.READ)
 
-        with ayeaye.connector_resolver.context(some_file="mice.csv"):
+        with ayeaye.connector_resolver.context(some_file="mice_no_heading.csv"):
             connector_0 = c.add_engine_url(engine_url)
             connector_1 = c.add_engine_url(engine_url)
 
@@ -130,8 +144,8 @@ class TestMultiConnectors(unittest.TestCase):
             self.assertTrue(id(connector_0) == id(connector_1))
 
     def test_unresolved_engine_url(self):
-        # replace 'mice.csv' with a template param
-        engine_url = "csv://" + EXAMPLE_CSV_MICE.replace("mice.csv", "{some_file}")
+        # replace 'mice_no_heading.csv' with a template param
+        engine_url = "csv://" + EXAMPLE_CSV_MICE.replace("mice_no_heading.csv", "{some_file}")
 
         c = MultiConnector(engine_url=[], access=ayeaye.AccessMode.READ)
         connector_0 = c.add_engine_url(engine_url)
@@ -142,6 +156,6 @@ class TestMultiConnectors(unittest.TestCase):
         self.assertIn("Couldn't fully resolve engine URL", str(exception_context.exception), msg)
 
         c = MultiConnector(engine_url=[], access=ayeaye.AccessMode.READ)
-        with ayeaye.connector_resolver.context(some_file="mice.csv"):
+        with ayeaye.connector_resolver.context(some_file="mice_no_heading.csv"):
             connector_1 = c.add_engine_url(engine_url)
-            self.assertTrue(connector_1.engine_url.endswith("mice.csv"))
+            self.assertTrue(connector_1.engine_url.endswith("mice_no_heading.csv"))

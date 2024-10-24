@@ -12,8 +12,8 @@ from . import TEST_DATA_PATH
 EXAMPLE_CSV_PATH = os.path.join(TEST_DATA_PATH, "deadly_creatures.csv")
 EXAMPLE_TSV_PATH = os.path.join(TEST_DATA_PATH, "monkeys.tsv")
 EXAMPLE_CSV_VENOMOUS = os.path.join(TEST_DATA_PATH, "venomous_creatures.csv")
-EXAMPLE_CSV_MICE = os.path.join(TEST_DATA_PATH, "mice.csv")
-EXAMPLE_CSV_SQUIRRELS = os.path.join(TEST_DATA_PATH, "squirrels.csv")
+EXAMPLE_CSV_MICE = os.path.join(TEST_DATA_PATH, "mice_no_heading.csv")
+EXAMPLE_CSV_SQUIRRELS = os.path.join(TEST_DATA_PATH, "squirrels_no_heading.csv")
 EXAMPLE_CSV_DUPLICATE_FIELDNAMES = os.path.join(TEST_DATA_PATH, "duplicate_field_names.csv")
 EXAMPLE_CSV_QUOTED = os.path.join(TEST_DATA_PATH, "venomous_spiders.csv")
 
