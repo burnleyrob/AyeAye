@@ -317,7 +317,7 @@ class TestResolve(unittest.TestCase):
         # Note-
         # ls tests/data/m*.?sv
         # gives
-        # tests/data/mice.csv    tests/data/monkeys.tsv
+        # tests/data/mice_no_heading.csv    tests/data/monkeys.tsv
         #
         # The test is written to just check these files exist as additional test data
         # might be added in the future.
@@ -329,7 +329,7 @@ class TestResolve(unittest.TestCase):
             m = Animals()
             resolved_engines = ":".join([c.engine_url for c in m.some_animals])
 
-        self.assertIn("mice.csv", resolved_engines)
+        self.assertIn("mice_no_heading.csv", resolved_engines)
         self.assertIn("monkeys.tsv", resolved_engines)
 
     def test_isolated_additional_context(self):
