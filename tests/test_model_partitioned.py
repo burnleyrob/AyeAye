@@ -52,9 +52,9 @@ class FindLongestAnimalName(ayeaye.PartitionedModel):
 
         return [(target_method, {"engine_set": engine_set}) for engine_set in task_sets.values()]
 
-    def partition_subtask_complete(self, subtask_method_name, subtask_kwargs, subtask_return_value):
-        if subtask_method_name == "find_longest_name":
-            self.common_names_max.append(subtask_return_value)
+    def partition_subtask_complete(self, task_message):
+        if task_message.method_name == "find_longest_name":
+            self.common_names_max.append(task_message.return_value)
 
     def partition_complete(self):
         longest_animal_name = max(self.common_names_max, key=len)
@@ -99,12 +99,12 @@ class DistributedFakeWork(ayeaye.PartitionedModel):
         target_method = "some_work"
         return [(target_method, {"some_number": x}) for x in range(self.number_of_tasks)]
 
-    def partition_subtask_complete(self, subtask_method_name, subtask_kwargs, subtask_return_value):
+    def partition_subtask_complete(self, task_message):
         if not hasattr(self, "resultset"):
             self.resultset = []
 
-        if subtask_method_name == "some_work":
-            self.resultset.append(subtask_return_value)
+        if task_message.method_name == "some_work":
+            self.resultset.append(task_message.return_value)
 
 
 class BrokenModel(ayeaye.PartitionedModel):
@@ -123,12 +123,12 @@ class BrokenModel(ayeaye.PartitionedModel):
 
 
 class LessBrokenModel(BrokenModel):
-    def partition_subtask_complete(self, subtask_method_name, subtask_kwargs, subtask_return_value):
-        assert subtask_method_name == "some_work"
-        self.log(f"success for {subtask_kwargs['some_number']}")
+    def partition_subtask_complete(self, task_message):
+        assert task_message.method_name == "some_work"
+        self.log(f"success for {task_message.method_kwargs['some_number']}")
 
-    def partition_subtask_failed(self, task_fail_message):
-        self.log(f"failed for {task_fail_message.method_kwargs['some_number']}", "ERROR")
+    def partition_subtask_failed(self, task_message):
+        self.log(f"failed for {task_message.method_kwargs['some_number']}", "ERROR")
 
 
 class ScalingFactorsModel(ayeaye.PartitionedModel):
@@ -164,9 +164,9 @@ class ScalingFactorsModel(ayeaye.PartitionedModel):
 
         return sub_tasks
 
-    def partition_subtask_complete(self, subtask_method_name, subtask_kwargs, subtask_return_value):
+    def partition_subtask_complete(self, task_message):
         "Make the results available to the unittest"
-        msg = f"some_number: {subtask_kwargs['some_number']} : {subtask_return_value}"
+        msg = f"some_number: {task_message.method_kwargs['some_number']} : {task_message.return_value}"
         self.log(msg)
 
 
@@ -191,9 +191,12 @@ class ModelRunnerModel(ayeaye.PartitionedModel):
 
         return sub_tasks
 
-    def partition_subtask_complete(self, subtask_method_name, subtask_kwargs, subtask_return_value):
+    def partition_subtask_complete(self, task_message):
         "Make the results available to the unittest"
-        msg = f"Completed ModelRunnerModel: {subtask_method_name} {subtask_kwargs} {subtask_return_value}"
+        msg = (
+            "Completed ModelRunnerModel: "
+            f"{task_message.method_name} {task_message.method_kwargs} {task_message.return_value}"
+        )
         self.log(msg)
 
 

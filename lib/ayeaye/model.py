@@ -341,35 +341,48 @@ class PartitionedModel(Model):
 
     It works as follows-
 
-    1. The executor creates the parent instance. If the 'simple mechanism for parallel execution' (as
-    above) is being used, this is the instance that :meth:`go` is running on.
+    1. The executor creates the parent instance.
+      i.e. this instance is of a subclass of :class:`PartitionedModel`.
+      e.g.
+        >>> class MyModel(PartitionedModel):
+            ...
+        >>> my_model = MyModel()
 
-    2. The executor asks the parent instance for 'suggestions' of how many sub-tasks the model can
-    be split into (see :meth:`partition_plea`). This suggestion is for the number of workers the
+        `my_model` is the parent instance.
+
+    2. :meth:`build` will be called on the parent instance. In a partitioned model that does all
+    it's work through separate sub-tasks the :meth:`build` method doesn't need to do anything. So
+    it could be implemented like this-
+
+        >>> def build(self):
+        >>>   pass
+
+    3. The executor uses :meth:`partition_plea` to ask the parent instance for 'suggestions' of how
+    many workers to use to run sub-tasks. i.e. This suggestion is for the number of workers the
     model would like to have running in parallel. There are situations where an exact number of
     workers are needed (e.g. so each worker has independent control of a resource such as a file)
     and there are other situations where too many worker could result in a stampede on a resource
-    (such as a database).
+    (such as a database) so fewer workers than supported by the environment should be used by the
+    executor.
 
-    3. The executor evaluates the :class:`PartitionOption` returned by :meth:`partition_plea`
+    4. The executor evaluates the :class:`PartitionOption` returned by :meth:`partition_plea`
     along with the capabilities of the execution environment and requests a mutually compatible
     number of partition arguments from :meth:`partition_slice`. The number of sub-tasks doesn't
     need to match the number of workers although there can be a relationship.
 
-    4. :meth:`partition_slice` is called on the parent instance. It returns a list of sub-tasks
-    (e.g. method names and sub-task arguments). Each sub-task is passed by the executor to an
+    5. :meth:`partition_slice` is called on the parent instance. It returns a list of sub-tasks
+    (e.g. method names and sub-task arguments) or is a generator. Each sub-task is passed by the executor to an
     instance of the model that has been instantiated with the same resolver context (see
     :class:`ConnectorResolver`) as the 'parent' model. The models running in the worker processes
     are initiated when the worker process starts, i.e. each instance will have it's sub-task method
-     called multiple times. See :meth:`partition_initialise`.
+    called multiple times. See :meth:`partition_initialise`.
 
-    4. The return value from each subtask is passed to optional :meth:`partition_subtask_complete`.
+    6. The return value from each subtask is passed to (optionally overridden)
+    :meth:`partition_subtask_complete` on the parent instance.
 
-    5. When the executor is satisfied that all sub-tasks are complete the optional
-    :meth:`partition_complete` method is called.
+    7. When the executor is satisfied that all sub-tasks are complete the optional
+    :meth:`partition_complete` method is called on the parent instance.
 
-    6. The :meth:`build` will be called in a separate worker process. i.e. this isn't the same
-    instance as the parent instance.
     """
 
     # Start simple, this will no doubt increase in flexibility. Each are an integer suggesting
@@ -437,16 +450,17 @@ class PartitionedModel(Model):
 
     def partition_plea(self):
         """
-        Subclass this method so models can suggest possible options for splitting the task execution.
+        Optionally override this method to adjust the number of workers that will be used for
+        sub-task execution.
 
         This method presents a mechanism for the model to co-ordinate with the execution environment
         in order to split the task based on the environment. Generally, this isn't needed as the
         number of workers is independent to the number of sub-tasks. i.e. a typical model will
         produce a large number of sub-tasks that are executed by a smaller number of workers.
 
-        This method is useful when-
-        (i) Too many parallel tasks could swamp a resource. e.g. a relational database
-        (ii) Optimal hash partitioning - where each worker runs one partition in parallel
+        Examples of where implementing this method in a subclass is useful-
+        * Too many parallel tasks could swamp a resource. e.g. a relational database
+        * Optimal hash partitioning - where each worker runs one partition in parallel
         https://docs.gitlab.com/ee/development/database/partitioning/hash.html
 
         The default behaviour is to return `PartitionOption(minimum=1, maximum=128, optimal=16)`
@@ -462,11 +476,17 @@ class PartitionedModel(Model):
 
     def partition_slice(self, partition_count):
         """
-        Create sub-task arguments.
+        Specify all the sub-tasks.
 
-        Create a list (sorry, no iterators) of arguments to define each subtask. This is composed
-        of the method name and key word arguments. The method+kwargs will be called on one of the
-        workers.
+        Create a list or iterator object (and therefore a generator could be used) of arguments to
+        define each subtask. At the minimum, this is  a (str, dict) tuple of method name and
+        keyword arguments. The method+kwargs will be called by one of the workers on an instance of
+        the current class.
+
+        Slightly more flexible than returning tuples to describe sub-tasks is to use
+        :class`TaskPartition` objects. This class can be used to specify another class for the model
+        (i.e. something other than `self.__class__`. And other sets of keyword arguments can be
+        specified. e.g. model or partition initialisation parameters.
 
         The number of sub-tasks returned doesn't need to relate to the number of partitions
         (`partition_count`). This is because each worker could execute zero or more sub-tasks.
@@ -481,19 +501,23 @@ class PartitionedModel(Model):
         @returns (list of (method name (str), kwargs (dict))
                     or
                  (list of :class`TaskPartition` objects)
+                    or
+                 an iterator object
+                    or
+                 implement a generator here (e.g. use a `yield` statement for each subtask)
         """
         raise NotImplementedError("All models must implement this method")
 
-    def partition_subtask_complete(self, subtask_method_name, subtask_kwargs, subtask_return_value):
+    def partition_subtask_complete(self, task_message):
         """
-        Optional method. Called on the parent task for each completed sub-tasks.
+        Optional method. Called on the parent instance for each completed sub-task. It can be used
+        to collate results or take further actions when a sub-task has finished.
 
-        This will be called on the parent task (i.e. not on the worker). It can be used to collate
-        results or take further actions when a sub-task has finished.
+        @param task_message: (:class:`ayeaye.runtime.task_message.TaskComplete`)
         """
         return None
 
-    def partition_subtask_failed(self, task_fail_message):
+    def partition_subtask_failed(self, task_message):
         """
         A subtask could be run within the current process or within an isolated separate process or
         on another machine altogether. If the task fails with an exception details of the problem
@@ -504,13 +528,13 @@ class PartitionedModel(Model):
         A failed subtask shouldn't be silent so the default behaviour is to raise this as an
         :class:`ayeaye.exceptions.SubTaskFailed` exception.
 
-        @param task_fail_message: (`ayeaye.runtime.task_message.TaskFailed`)
+        @param task_message: (`ayeaye.runtime.task_message.TaskFailed`)
         """
-        raise SubTaskFailed(task_fail_message=task_fail_message)
+        raise SubTaskFailed(task_fail_message=task_message)
 
     def partition_complete(self):
         """
-        Optional method. Called on the parent when the executor has finished all sub-tasks.
+        Optional method. Called on the parent instance when the executor has finished all sub-tasks.
         """
         return None
 
@@ -609,11 +633,12 @@ class PartitionedModel(Model):
 
                 m.close_datasets()
 
-                self.partition_subtask_complete(
-                    subtask_method_name=task.method_name,
-                    subtask_kwargs=task.method_kwargs,
-                    subtask_return_value=subtask_return_value,
+                task_message = TaskComplete(
+                    method_name=task.method_name,
+                    method_kwargs=task.method_kwargs,
+                    return_value=subtask_return_value,
                 )
+                self.partition_subtask_complete(task_message=task_message)
 
                 if resolver_context is not None:
                     resolver_context.finish()
@@ -630,11 +655,7 @@ class PartitionedModel(Model):
             subtasks_count = len(tasks)
             for subtask_message in self.process_pool.run_subtasks(**subtask_kwargs):
                 if isinstance(subtask_message, TaskComplete):
-                    self.partition_subtask_complete(
-                        subtask_method_name=subtask_message.method_name,
-                        subtask_kwargs=subtask_message.method_kwargs,
-                        subtask_return_value=subtask_message.return_value,
-                    )
+                    self.partition_subtask_complete(task_message=subtask_message)
                     subtasks_complete += 1
                     self.log_progress(subtasks_complete / subtasks_count)
 
@@ -645,7 +666,7 @@ class PartitionedModel(Model):
                     # :meth:`PartitionedModel.partition_subtask_complete` is to raise this as an
                     # exception
                     # for now, throw an error
-                    self.partition_subtask_failed(task_fail_message=subtask_message)
+                    self.partition_subtask_failed(task_message=subtask_message)
 
                 elif isinstance(subtask_message, TaskLogMessage):
                     # TODO structured logging to separate and de-dupe fields like the date
