@@ -40,6 +40,9 @@ class AbstractExpandEnginePattern:
 
     def expand_pattern(self):
         """
+        Query datasource and evaluate the wildcard pattern. Subclasses implementing this method
+        must take care to be deterministic.
+
         @return: list of str
             engine_urls, each one becomes a connector (subclass of :class:`DataConnector`) in a
             :class:`MultiConnector`
@@ -81,6 +84,9 @@ class FilesystemEnginePattern(AbstractExpandEnginePattern):
         engine_url = []
         for engine_file in glob.glob(engine_path_pattern):
             engine_url.append(f"{engine_type}://{engine_file}")
+
+        # sort to ensure the results are deterministic/repeatable
+        engine_url.sort()
 
         return engine_url
 

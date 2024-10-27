@@ -70,6 +70,9 @@ class SmartOpenEnginePattern(FilesystemEnginePattern):
                 # end of pages
                 break
 
+        # sort to ensure the results are deterministic/repeatable
+        engine_url.sort()
+
         return engine_url
 
 

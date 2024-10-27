@@ -246,17 +246,14 @@ class Connect:
 
             if connector.engine_pattern_expander.has_multi_engine_pattern():
                 # the engine_url has wildcard/pattern characters so this should be a
-                # :class:MultiConnector
+                # :class:MultiConnector even if the pattern evaluation results in a
+                # single file.
+                # Might be nice to warn if :meth:`expand_pattern` results in no files
                 engine_urls = connector.engine_pattern_expander.expand_pattern()
 
-                detached_kwargs["engine_url"] = []
+                detached_kwargs["engine_url"] = engine_urls
                 connector = MultiConnector(**detached_kwargs)
                 connector._connect_instance = self
-
-                # would be good to warn if :meth:`expand_pattern` results in no files
-
-                for e_url in engine_urls:
-                    connector.add_engine_url(e_url)
 
         return connector
 
