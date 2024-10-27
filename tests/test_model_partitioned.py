@@ -75,6 +75,25 @@ class FindLongestAnimalName(ayeaye.PartitionedModel):
         return longest
 
 
+class FindLongestAnimalNameIterator(FindLongestAnimalName):
+    """
+    Testing a generator instead of list in :meth:`partition_slice`.
+    """
+
+    def partition_slice(self, _):
+        """
+        One subtask per file. This is a different strategy to :class:`FindLongestAnimalName`.
+        """
+
+        for dataset in self.animals:
+            tp = TaskPartition(
+                model_cls=self.__class__,
+                method_name="find_longest_name",
+                method_kwargs={"engine_set": [dataset.engine_url]},
+            )
+            yield tp
+
+
 class DistributedFakeWork(ayeaye.PartitionedModel):
     """
     Distribute a fake calculation and assemble the results.
@@ -471,3 +490,22 @@ class TestPartitionedModel(unittest.TestCase):
                 "task:2 sees engine_url: file://A/2",
             ]:
                 self.assertIn(expected_snippet, all_the_logs, f"Can't find - {expected_snippet}")
+
+    def test_partition_slice_iterator(self):
+        """
+        Tasks are from a generator, not a list.
+        """
+        m = FindLongestAnimalNameIterator()
+        m.log_to_stdout = False
+
+        output_file = "{}/animals_summary.json".format(self.working_directory())
+        m.animals_output.update(engine_url=f"json://{output_file};indent=4")
+        output_encoding = m.animals_output.encoding
+
+        m.go()
+
+        with open(output_file, "r", encoding=output_encoding) as f:
+            output_data = json.load(f)
+
+        expected_data = "Crown of thorns starfish"
+        self.assertEqual(expected_data, output_data)

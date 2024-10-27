@@ -46,7 +46,7 @@ class AbstractProcessPool:
         A subtask is considered complete when it yields either :class:`TaskComplete` or
         :class:`TaskFailed`. It can yield many :class:`TaskLogMessage`
 
-        @param sub_tasks: list of :class:`TaskPartition` objects
+        @param sub_tasks: An iterator of :class:`TaskPartition` objects
             each item defines a subtask to execute in a worker process
 
         @param processes: (int or None)
@@ -119,7 +119,6 @@ class LocalProcessPool(AbstractProcessPool):
         if processes > self.max_processes:
             raise ValueError(f"{processes} processes passed, max set to {self.max_processes}")
 
-        subtasks_count = len(sub_tasks)
         context_kwargs = context_kwargs or {}
 
         subtasks_queue = Queue()
@@ -144,13 +143,17 @@ class LocalProcessPool(AbstractProcessPool):
             # proc.daemon = True
             proc.start()
 
+        subtasks_count = 0
         for sub_task in sub_tasks:
             subtasks_queue.put(sub_task)
+            # count tasks into the process pool ...
+            subtasks_count += 1
 
         # instruct worker process to terminate
         for _ in range(processes):
             subtasks_queue.put(None)
 
+        # ... and count tasks out of the process pool
         completed_procs = 0
         while completed_procs < subtasks_count:
             task_message = return_values_queue.get()

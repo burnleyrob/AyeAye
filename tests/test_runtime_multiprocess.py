@@ -57,14 +57,17 @@ class TestRuntimeMultiprocess(unittest.TestCase):
             msg = "build_environment_variable should be discarded, local_variable should be present"
             proc_pool = LocalProcessPool(max_processes=workers_count)
 
-            subtask_kwargs = dict(
-                sub_tasks=[
+            def subtasks_iterator():
+                yield from [
                     TaskPartition(
                         model_cls=ExamineResolverContext,
                         method_name="fake_subtask",
                         method_kwargs={},
                     )
-                ],
+                ]
+
+            subtask_kwargs = dict(
+                sub_tasks=subtasks_iterator(),
                 processes=workers_count,
                 context_kwargs={"local_variable": "is_set"},
             )

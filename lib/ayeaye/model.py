@@ -505,6 +505,7 @@ class PartitionedModel(Model):
                  an iterator object
                     or
                  implement a generator here (e.g. use a `yield` statement for each subtask)
+                 - Python's syntactical sugar will make this into an iterator.
         """
         raise NotImplementedError("All models must implement this method")
 
@@ -574,26 +575,43 @@ class PartitionedModel(Model):
 
         self.build()
 
-        tasks = self.partition_slice(workers_count)
-        subtasks_count = len(tasks)
         active_context = connector_resolver.capture_context()
 
-        # the simple version of :meth:`partition_slice` returns a list of tuples.
-        # :class:`TaskPartition` contains more info
-        task_definitions = []
-        for t in tasks:
-            if isinstance(t, TaskPartition):
-                task_definitions.append(t)
-            else:
-                method_name, method_kwargs = t
-                tp = TaskPartition(
-                    model_cls=self.__class__,
-                    method_name=method_name,
-                    method_kwargs=method_kwargs if method_kwargs is not None else {},
-                    model_construction_kwargs={},
-                    partition_initialise_kwargs={},
-                )
-                task_definitions.append(tp)
+        tasks = self.partition_slice(workers_count)
+
+        if isinstance(tasks, list):
+
+            subtasks_count = len(tasks)
+
+            # the simple version of :meth:`partition_slice` returns a list of tuples.
+            # :class:`TaskPartition` contains more info
+            task_definitions = []
+            for t in tasks:
+                if isinstance(t, TaskPartition):
+                    task_definitions.append(t)
+                else:
+                    method_name, method_kwargs = t
+                    tp = TaskPartition(
+                        model_cls=self.__class__,
+                        method_name=method_name,
+                        method_kwargs=method_kwargs if method_kwargs is not None else {},
+                        model_construction_kwargs={},
+                        partition_initialise_kwargs={},
+                    )
+                    task_definitions.append(tp)
+
+            def _sub_tasks_iterator():
+                "Convert list into an iterator"
+                yield from task_definitions
+
+            sub_tasks_iterator = _sub_tasks_iterator()
+
+        elif hasattr(tasks, "__iter__"):
+            # there isn't an `isiterable` in Python, this is close enough
+            subtasks_count = None  # not possible with iterator of tasks
+            sub_tasks_iterator = tasks
+        else:
+            raise ValueError("tasks returned from `partition_slice` isn't an obvious iterator")
 
         if workers_count == 1:
             # don't use the process pool as only one worker is available. There might be many
@@ -609,7 +627,7 @@ class PartitionedModel(Model):
             self.runtime.total_workers = 1
 
             subtasks_complete = 0
-            for task in task_definitions:
+            for task in sub_tasks_iterator:
 
                 resolver_context = None
                 if task.additional_context:
@@ -643,21 +661,24 @@ class PartitionedModel(Model):
                 if resolver_context is not None:
                     resolver_context.finish()
 
-                self.log_progress(subtasks_complete / subtasks_count)
+                if subtasks_count is not None:
+                    self.log_progress(subtasks_complete / subtasks_count)
 
         else:
             subtasks_complete = 0
             subtask_kwargs = {
-                "sub_tasks": task_definitions,
+                "sub_tasks": sub_tasks_iterator,
                 "context_kwargs": active_context["mapper"],
                 "processes": workers_count,
             }
-            subtasks_count = len(tasks)
+
             for subtask_message in self.process_pool.run_subtasks(**subtask_kwargs):
                 if isinstance(subtask_message, TaskComplete):
                     self.partition_subtask_complete(task_message=subtask_message)
                     subtasks_complete += 1
-                    self.log_progress(subtasks_complete / subtasks_count)
+
+                    if subtasks_count is not None:
+                        self.log_progress(subtasks_complete / subtasks_count)
 
                 elif isinstance(subtask_message, TaskFailed):
                     subtasks_complete += 1
