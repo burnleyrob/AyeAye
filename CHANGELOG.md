@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.1.0] - 2024-10-27
+
+### Fixed
+- MultiConnector + wildcards bug reported by @burnleyrob - optional_args weren't being passed to the underlying connectors.
+- wildcards were not necessarily deterministic. Also reported by @burnleyrob
+
+### Changed
+- methods PartitionedModel.partition_subtask_complete and PartitionedModel.partition_subtask_failed now take a single 'message' instead of multiple arguments describing the task. This will help in the future when traceability is added at the task level.
+- improved: doc. around :class:`Model` and :class:`PartitionedModel`
+- subclass of `AbstractProcessPool` must accept an iterator instead of a list of sub-tasks.  This change makes it possible for a model to interactively send sub-tasks based on the results/completion/failure of other subtasks. Lists of sub-tasks will still work with LocalProcessPool for now. Fossa is being updated to support iterators in parallel.
+
+
 ## [0.0.70] - 2024-10-01
 
 ### Fixed
