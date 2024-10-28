@@ -3,6 +3,7 @@ Created on 22 Jan 2020
 
 @author: si
 """
+
 try:
     from sqlalchemy import create_engine
     from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -11,7 +12,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-from ayeaye.connectors.base import DataConnector, AccessMode
+from ayeaye.connectors.base import DataConnector, DataFlow, AccessMode
 from ayeaye.pinnate import Pinnate
 
 
@@ -296,3 +297,29 @@ class SqlAlchemyDatabaseConnector(DataConnector):
         self.connect()
         sql = text(sql_stmt)
         return self.session.execute(sql, sql_params)
+
+    def data_flow(self):
+        """
+        Include the schema (aka table names) in the data flow keys. Each schema is a separate key
+        as each is a distinct data source.
+
+        @see :meth:`DataConnector.data_flow`
+        """
+        inputs = []
+        outputs = []
+
+        if self.schema is None:
+            active_schemas = [""]
+        elif self.is_single_schema_mode:
+            active_schemas = [self.schema.__name__]
+        else:
+            active_schemas = [schema_name for schema_name in self.schema.keys()]
+
+        for schema in active_schemas:
+            if self.access == AccessMode.READ or self.access == AccessMode.READWRITE:
+                inputs.append(self.engine_url + "#" + schema)
+
+            if self.access == AccessMode.WRITE or self.access == AccessMode.READWRITE:
+                outputs.append(self.engine_url + "#" + schema)
+
+        return DataFlow(inputs=inputs, outputs=outputs)

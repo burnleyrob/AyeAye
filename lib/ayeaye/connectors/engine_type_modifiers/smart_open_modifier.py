@@ -8,7 +8,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-from ayeaye.connectors.base import AccessMode, FileBasedConnector, FilesystemEnginePattern
+from ayeaye.connectors.base import AccessMode, DataFlow, FileBasedConnector, FilesystemEnginePattern
 from ayeaye.connectors.engine_type_modifiers.abstract_modifier import AbstractEngineTypeModifier
 from ayeaye.connectors.engine_type_modifiers.utils import s3_pattern_match
 from ayeaye.ignition import EngineUrlCase, EngineUrlStatus
@@ -219,3 +219,15 @@ class SmartOpenModifier(AbstractEngineTypeModifier):
             return
 
         self._auto_create_directory()
+
+    def data_flow(self):
+        """
+        Add modifiers to data flow keys.
+        e.g.
+            "csv://mine/a.csv" != "s3+csv://mine/a.csv"
+        """
+        non_modifier_data_flow = super().data_flow()
+        key_prefix = "+".join(self.requested_modifier_labels)
+        inputs = [f"{key_prefix}+{d}" for d in non_modifier_data_flow.inputs]
+        outputs = [f"{key_prefix}+{d}" for d in non_modifier_data_flow.outputs]
+        return DataFlow(inputs=inputs, outputs=outputs)

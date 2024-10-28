@@ -147,6 +147,10 @@ class Model:
         Find all :class:`DataConnector` object, both those made directly (not recommended practice)
         and those built by :class:`ayeaye.Connect`.
 
+        WARNING - this method uses introspection (i.e. :func:`dir`) to examine attributes of the
+        instance. This can have unintended side effects, for example running code attached to
+        properties.
+
         :returns (dict) of dataset connections for this model.
                 key is class variable name
                 value is :class:`ayeaye.DataConnector`

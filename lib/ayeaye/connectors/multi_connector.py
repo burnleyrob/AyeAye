@@ -3,7 +3,8 @@ Created on 12 Feb 2020
 
 @author: si
 """
-from ayeaye.connectors.base import AccessMode, DataConnector
+
+from ayeaye.connectors.base import AccessMode, DataConnector, DataFlow
 from ayeaye.connectors import connector_factory
 
 
@@ -165,3 +166,22 @@ class MultiConnector(DataConnector):
         """
         self.connect()
         return self._child_data_connectors
+
+    def data_flow(self):
+        """
+        The key uses the file path, not the engine_url.
+        e.g.
+            'csv:///stuff.csv' and 'file:///stuff.csv' are the same data.
+
+        @see :meth:`DataConnector.data_flow`
+        """
+        inputs = []
+        outputs = []
+
+        for child_connector in self.data:
+
+            data_flow = child_connector.data_flow()
+            inputs.extend(data_flow.inputs)
+            outputs.extend(data_flow.outputs)
+
+        return DataFlow(inputs=inputs, outputs=outputs)

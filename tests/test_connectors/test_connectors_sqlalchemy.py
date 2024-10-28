@@ -3,6 +3,7 @@ Created on 22 Jan 2020
 
 @author: si
 """
+
 import os
 import shutil
 import tempfile
@@ -387,3 +388,28 @@ class TestSqlAlchemyConnector(unittest.TestCase):
         expected_super_moths = set(["Atlas moth", "Herculese moth"])
         msg = "These have the word largest in the notes field"
         self.assertEqual(expected_super_moths, super_moth_names, msg)
+
+    def test_data_flow(self):
+        """
+        Values of the keys aren't checked as they will probably change. Just check
+        that multiple data flow keys are created when multiple tables are in use.
+        """
+        single_schema = SqlAlchemyDatabaseConnector(
+            engine_url="sqlite://",
+            schema_builder=people_schema,
+        )
+
+        msg = "Just 'Person' table so expecting one input key"
+        # using sets to remove duplicates
+        inputs = set(single_schema.data_flow().inputs)
+        self.assertEqual(1, len(inputs), msg)
+
+        multiple_schema = SqlAlchemyDatabaseConnector(
+            engine_url="sqlite://",
+            schema_builder=fruit_schemas,
+            access=ayeaye.AccessMode.WRITE,
+        )
+
+        msg = "fruit_schemas has 'Pear' and 'Bananna' tables so expecting two keys"
+        inputs = set(multiple_schema.data_flow().outputs)
+        self.assertEqual(2, len(inputs), msg)

@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import datetime, timezone
 from enum import Enum
 import glob
@@ -11,6 +12,9 @@ class AccessMode(Enum):
     READ = "r"
     WRITE = "w"
     READWRITE = "rw"
+
+
+DataFlow = namedtuple("DataFlow", ("inputs", "outputs"))
 
 
 class AbstractExpandEnginePattern:
@@ -357,6 +361,42 @@ class DataConnector:
         )
         raise NotImplementedError(msg)
 
+    def data_flow(self):
+        """
+        Expand on the read/write `access` attribute so `DataConnector`s can more accurately
+        describe input/outputs.
+
+        The objective is to determine if the datasets used across multiple models are in fact the
+        same datasets. This is needed when looking at the build order for inter-related models.
+
+        Most of the time, the `engine_url` for a `DataConnector` is enough to uniquely identify a
+        datasource but it can be -
+        * too precise - 'csv:///stuff.csv' and 'file:///stuff.csv' are in fact the same data but
+        have different engine_urls.
+        * too imprecise - 'sqlite:////data/sensors.db' has many tables and each can be worked on
+        independently.
+
+        The .inputs and .outputs returned are a list of 'keys'. These are just strings that could
+        be generated in the same way by any `DataConnector` that uses the same part of the dataset.
+        Example keys-
+        * "sqlite:////data/sensors.db#my_table"
+        * "s3+some_bucket/some_file"
+        * "/data/xyz"
+
+        This method is intended to be overridden in subclasses.
+
+        @return :class:`DataFlow` instance. with .inputs and .outputs as lists of str
+        """
+        inputs = []
+        outputs = []
+        if self.access == AccessMode.READ or self.access == AccessMode.READWRITE:
+            inputs.append(self.engine_url)
+
+        if self.access == AccessMode.WRITE or self.access == AccessMode.READWRITE:
+            outputs.append(self.engine_url)
+
+        return DataFlow(inputs=inputs, outputs=outputs)
+
 
 class FileBasedConnector(DataConnector):
     """
@@ -533,3 +573,21 @@ class FileBasedConnector(DataConnector):
         timestamp = os.path.getmtime(self.file_path)
         last_modified = datetime.utcfromtimestamp(timestamp).replace(tzinfo=timezone.utc)
         return last_modified
+
+    def data_flow(self):
+        """
+        The key uses the file path, not the engine_url.
+        e.g.
+            'csv:///stuff.csv' and 'file:///stuff.csv' are the same data.
+
+        @see :meth:`DataConnector.data_flow`
+        """
+        inputs = []
+        outputs = []
+        if self.access == AccessMode.READ or self.access == AccessMode.READWRITE:
+            inputs.append(self.file_path)
+
+        if self.access == AccessMode.WRITE or self.access == AccessMode.READWRITE:
+            outputs.append(self.file_path)
+
+        return DataFlow(inputs=inputs, outputs=outputs)
