@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.1.1] - 2024-10-29
+
+### Added
+- common_pattern.parallel_model_runner.AbstractDependencyDrivenModelRunner to demonstrate how to use
+data dependencies to interactively run models.
+
+### Updated
+- TaskComplete to include the model class' name
+
+### Fixed
+- Mermaid output as dataset key isn't yet available to annotate the graph edges
+- LocalProcessPool which ended up with a deadlock when there are inter-related subtasks. This is beca
+use parition_slice is now an iterator, this blocks (surprise!) solution is a thread to manage that as queu
+es also need to be managed in parallel.
+
 ## [0.1.0] - 2024-10-29
 
 ### Added

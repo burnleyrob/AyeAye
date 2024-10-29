@@ -656,6 +656,7 @@ class PartitionedModel(Model):
                 m.close_datasets()
 
                 task_message = TaskComplete(
+                    model_cls_name=task.model_cls.__name__,
                     method_name=task.method_name,
                     method_kwargs=task.method_kwargs,
                     return_value=subtask_return_value,

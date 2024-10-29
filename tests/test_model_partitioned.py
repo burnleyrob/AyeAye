@@ -11,6 +11,8 @@ from ayeaye.common_pattern.parallel_model_runner import ExampleModelRunner
 from ayeaye.exception import SubTaskFailed
 from ayeaye.runtime.task_message import TaskPartition
 
+from tests.example_models import DependenciesModel, One, Two, Three, Four, Five, Six
+
 PROJECT_TEST_PATH = os.path.dirname(os.path.abspath(__file__))
 EXAMPLE_CSV_PATH = os.path.join(PROJECT_TEST_PATH, "data", "deadly_creatures.csv")
 EXAMPLE_TSV_PATH = os.path.join(PROJECT_TEST_PATH, "data", "monkeys.tsv")
@@ -333,6 +335,21 @@ class TestPartitionedModel(unittest.TestCase):
             ("From the build context: Hello model runner!", "With build context"),
         ]:
             self.assertIn(expected_snippet, all_the_logs, msg)
+
+    def test_parallel_models_with_dependencies(self):
+
+        external_log = StringIO()
+        model_runner = DependenciesModel()
+        model_runner.set_logger(external_log)
+        model_runner.log_to_stdout = True
+        model_runner.go()
+
+        external_log.seek(0)
+        all_the_logs = external_log.read()
+
+        # could check all models, just checking one
+        for expected_msg in ["Sending TaskPartition message for Five", "Model completed: Five"]:
+            self.assertIn(expected_msg, all_the_logs)
 
     def test_force_non_concurrent(self):
         "Single process is used when user sets 'max_concurrent_tasks'"

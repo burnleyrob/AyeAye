@@ -1,81 +1,10 @@
 import unittest
 
-import ayeaye
+
 from ayeaye.model_collection import ModelCollection, ModelGraphEdge, VisualiseModels
 
 
-class One(ayeaye.Model):
-    a = ayeaye.Connect(engine_url="csv://a")
-    b = ayeaye.Connect(engine_url="csv://b", access=ayeaye.AccessMode.WRITE)
-
-
-class Two(ayeaye.Model):
-    b = One.b.clone(access=ayeaye.AccessMode.READ)
-    c = ayeaye.Connect(engine_url="csv://c", access=ayeaye.AccessMode.WRITE)
-
-
-class Three(ayeaye.Model):
-    c = Two.c.clone(access=ayeaye.AccessMode.READ)
-    d = ayeaye.Connect(engine_url="csv://d", access=ayeaye.AccessMode.WRITE)
-
-
-class Four(ayeaye.Model):
-    b_copy_paste = ayeaye.Connect(engine_url="csv://b", access=ayeaye.AccessMode.READ)
-    e = ayeaye.Connect(engine_url="csv://e", access=ayeaye.AccessMode.WRITE)
-
-
-class Five(ayeaye.Model):
-    b = One.b.clone(access=ayeaye.AccessMode.READ)
-    f = ayeaye.Connect(engine_url="sqlite:////data/f.db", access=ayeaye.AccessMode.READWRITE)
-
-
-class Six(ayeaye.Model):
-    b = One.b.clone(access=ayeaye.AccessMode.READ)
-    f = Five.f.clone(access=ayeaye.AccessMode.WRITE)
-
-
-failed_callable_msg = "No test should be calling this as the parent model class isn't instantiated"
-
-
-def find_destination():
-    """Will be called at build() time. In real life this would find out something that should
-    only be looked up during runtime."""
-    # return "csv://g.csv"
-    raise Exception(failed_callable_msg)
-
-
-def another_find_destination():
-    raise Exception(failed_callable_msg)
-
-
-class Seven(ayeaye.Model):
-    b = One.b.clone(access=ayeaye.AccessMode.READ)
-    g = ayeaye.Connect(engine_url=find_destination, access=ayeaye.AccessMode.WRITE)
-
-
-class Eight(ayeaye.Model):
-    g = Seven.g.clone(access=ayeaye.AccessMode.READ)
-    h = ayeaye.Connect(engine_url="csv://h", access=ayeaye.AccessMode.WRITE)
-
-
-class Nine(ayeaye.Model):
-    i = ayeaye.Connect(engine_url=another_find_destination, access=ayeaye.AccessMode.WRITE)
-    h = ayeaye.Connect(engine_url="csv://h", access=ayeaye.AccessMode.WRITE)
-
-
-class X(ayeaye.Model):
-    r = ayeaye.Connect(engine_url="csv://r")
-    s = ayeaye.Connect(engine_url="csv://s", access=ayeaye.AccessMode.WRITE)
-
-
-class Y(ayeaye.Model):
-    s = X.s.clone(access=ayeaye.AccessMode.READ)
-    t = ayeaye.Connect(engine_url="csv://t", access=ayeaye.AccessMode.WRITE)
-
-
-class Z(ayeaye.Model):
-    t = Y.t.clone(access=ayeaye.AccessMode.READ)
-    u = ayeaye.Connect(engine_url="csv://u", access=ayeaye.AccessMode.WRITE)
+from tests.example_models import One, Two, Three, Four, Five, Six, Seven, Eight, Nine, X, Y, Z
 
 
 class TestModelCollection(unittest.TestCase):
@@ -111,7 +40,7 @@ class TestModelCollection(unittest.TestCase):
         visual = VisualiseModels(model_collection=c)
         mermaid_content = visual.mermaid_data_provenance()
 
-        self.assertIn("One-->|| Two", mermaid_content)
+        self.assertIn("One-->|?| Two", mermaid_content)
 
     def test_model_dependencies(self):
 

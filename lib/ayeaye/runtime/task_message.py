@@ -47,6 +47,7 @@ class TaskPartition(AbstractTaskMessage):
 
 @dataclass
 class TaskComplete(AbstractTaskMessage):
+    model_cls_name: str
     method_name: str
     method_kwargs: dict
     return_value: Any

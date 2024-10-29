@@ -293,7 +293,9 @@ class VisualiseModels:
             model_a = edge.model_a.__name__ if edge.model_a is not None else next(leaf_label)
             model_b = edge.model_b.__name__ if edge.model_b is not None else next(leaf_label)
 
-            edge_fmt = f"{model_a}-->|{edge.dataset_label}| {model_b}"
+            edge_rep = edge.dataset_label or "?"
+
+            edge_fmt = f"{model_a}-->|{edge_rep}| {model_b}"
             out.append(edge_fmt)
 
         return "\n".join(out)

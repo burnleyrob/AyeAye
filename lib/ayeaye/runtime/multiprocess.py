@@ -2,8 +2,12 @@
 Run :class:`ayeaye.PartitionedModel` models across multiple operating system processes.
 """
 
+from ctypes import c_int
 from multiprocessing import Process, Queue
+from multiprocessing.sharedctypes import Value
+
 import sys
+from threading import Thread
 import traceback
 
 import ayeaye
@@ -139,30 +143,47 @@ class LocalProcessPool(AbstractProcessPool):
             self.proc_table.append(proc)
 
         for proc in self.proc_table:
-            # daemon for the purpose of child processes being terminated when the parent terminates.
-            # proc.daemon = True
             proc.start()
 
-        subtasks_count = 0
-        for sub_task in sub_tasks:
-            subtasks_queue.put(sub_task)
-            # count tasks into the process pool ...
-            subtasks_count += 1
+        subtasks_count = Value(c_int, -1)
+        subtasks_count.value = 0
 
-        # instruct worker process to terminate
-        for _ in range(processes):
-            subtasks_queue.put(None)
+        class SubTaskProcessor(Thread):
+            def __init__(self, subtasks_count, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.subtasks_count = subtasks_count
+
+            def run(self):
+                for sub_task in sub_tasks:
+                    subtasks_queue.put(sub_task)
+                    # count tasks into the process pool ...
+                    self.subtasks_count.value += 1
+
+        sub_tasks_thread = SubTaskProcessor(subtasks_count=subtasks_count)
+        sub_tasks_thread.start()
 
         # ... and count tasks out of the process pool
         completed_procs = 0
-        while completed_procs < subtasks_count:
-            task_message = return_values_queue.get()
+        while True:
+
+            if not sub_tasks_thread.is_alive() and completed_procs == subtasks_count.value:
+                # subtasks iterator is exhausted (thread complete) and all tasks have finished running
+                break
+
+            try:
+                task_message = return_values_queue.get(timeout=1)
+            except:
+                continue
 
             if isinstance(task_message, (TaskComplete, TaskFailed)):
                 completed_procs += 1
 
             # could be a log message or sub-task completed notification
             yield task_message
+
+        # signal to processes to end
+        for _ in range(processes):
+            subtasks_queue.put(None)
 
         for proc in self.proc_table:
             proc.join()
@@ -243,6 +264,7 @@ class LocalProcessPool(AbstractProcessPool):
                 try:
                     subtask_return_value = sub_task_method(**task_message.method_kwargs)
                     task_msg = TaskComplete(
+                        model_cls_name=task_message.model_cls.__name__,
                         method_name=task_message.method_name,
                         method_kwargs=task_message.method_kwargs,
                         return_value=subtask_return_value,
