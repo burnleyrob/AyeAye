@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.1.0] - 2024-10-29
+
+### Added
+- :meth:`data_flow` to all :class:`DataConnector`s. This gives more details on input and output datas
+ets as need to build the execution graph
+
+### Updated
+- completely re-wrote ModelCollection to it's orientated around interactively determining which models are ready to run.
+
 ## [0.1.0] - 2024-10-27
 
 ### Fixed
