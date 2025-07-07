@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.1.3] - 2025-07-07
+
+### Fixed
+- Connector's optional url args not passed to child connectors when using a filesystem wildcard
+
 ## [0.1.1] - 2024-10-29
 
 ### Added

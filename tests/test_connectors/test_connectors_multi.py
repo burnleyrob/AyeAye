@@ -159,3 +159,16 @@ class TestMultiConnectors(unittest.TestCase):
         with ayeaye.connector_resolver.context(some_file="mice_no_heading.csv"):
             connector_1 = c.add_engine_url(engine_url)
             self.assertTrue(connector_1.engine_url.endswith("mice_no_heading.csv"))
+
+    def test_encoding_preserved(self):
+        """
+        All datasets selected when using a wildcard should be given the optional_engine_url_args
+        """
+        search_path = os.path.join(TEST_DATA_PATH, "*.csv")
+        connector = ayeaye.Connect(engine_url=f"csv://{search_path};encoding=latin-1")
+        file_encodings = [dataset.encoding for dataset in connector]
+        self.assertTrue(
+            len(file_encodings) > 0, "Regression check: previous code returned no files"
+        )
+        just_latin_1 = all([encoding == "latin-1" for encoding in file_encodings])
+        self.assertTrue(just_latin_1)

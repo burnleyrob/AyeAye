@@ -64,6 +64,7 @@ class FilesystemEnginePattern(AbstractExpandEnginePattern):
     # A :class:`MultiConnector` should be used.
     # Optionally defined by subclasses.
     pattern_characters = ["*", "?"]
+    url_args_separator = ";"
 
     def has_multi_engine_pattern(self):
         for pattern_indicating_character in self.pattern_characters:
@@ -85,9 +86,20 @@ class FilesystemEnginePattern(AbstractExpandEnginePattern):
         # with `://` for auto detect based on file name.
         engine_type, engine_path_pattern = e_url.split("://", 1)
 
+        # optional_engine_url_args
+
+        if self.url_args_separator in engine_path_pattern:
+            file_system_pattern, additional_args = engine_path_pattern.split(
+                self.url_args_separator, 1
+            )
+            additional_args = self.url_args_separator + additional_args
+        else:
+            file_system_pattern = engine_path_pattern
+            additional_args = ""
+
         engine_url = []
-        for engine_file in glob.glob(engine_path_pattern):
-            engine_url.append(f"{engine_type}://{engine_file}")
+        for engine_file in glob.glob(file_system_pattern):
+            engine_url.append(f"{engine_type}://{engine_file}{additional_args}")
 
         # sort to ensure the results are deterministic/repeatable
         engine_url.sort()
