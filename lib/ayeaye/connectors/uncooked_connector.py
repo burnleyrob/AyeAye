@@ -3,14 +3,13 @@ Created on 19 May 2021
 
 @author: si
 """
+
 from ayeaye.connectors.base import AccessMode, FileBasedConnector
 
 
 class UncookedConnector(FileBasedConnector):
     engine_type = "file://"
-    optional_args = {
-        "file_mode": "t",
-    }
+    optional_args = {"file_mode": "t", "encoding": None}
 
     def __init__(self, *args, **kwargs):
         """

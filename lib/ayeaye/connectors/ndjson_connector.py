@@ -3,6 +3,7 @@ Created on 17 Dec 2020
 
 @author: si
 """
+
 try:
     import ndjson
 except ModuleNotFoundError:
@@ -15,6 +16,7 @@ from ayeaye.pinnate import Pinnate
 class NdjsonConnector(FileBasedConnector):
     engine_type = "ndjson://"
     default_character_encoding = "utf-8-sig"
+    optional_args = {"encoding": None}
 
     def __init__(self, *args, **kwargs):
         """

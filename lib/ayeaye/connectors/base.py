@@ -417,6 +417,8 @@ class FileBasedConnector(DataConnector):
     This is a mixin for common functionality between file based `DataConnector` modules.
     """
 
+    optional_args = {"encoding": None}
+
     # class variables that can be defined by subclasses or left as are or overwritten with instance
     # variable.
     optional_engine_url_args = ["encoding"]  # list of str
@@ -559,6 +561,13 @@ class FileBasedConnector(DataConnector):
             self._encoding = ep.encoding if "encoding" in ep else self.default_character_encoding
 
         return self._encoding
+
+    @encoding.setter
+    def encoding(self, encoding):
+        """
+        Cater for encoding being settable via engine params as well as via optional args.
+        """
+        self._encoding = encoding
 
     def close_connection(self):
         super().close_connection()

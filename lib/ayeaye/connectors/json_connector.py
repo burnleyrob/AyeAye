@@ -15,6 +15,7 @@ class JsonConnector(FileBasedConnector):
     engine_type = "json://"
     optional_engine_url_args = FileBasedConnector.optional_engine_url_args + ["indent"]
     default_character_encoding = "utf-8-sig"
+    optional_args = {"encoding": None}
 
     def __init__(self, *args, **kwargs):
         """
