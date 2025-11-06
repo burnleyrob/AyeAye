@@ -14,17 +14,17 @@ from ayeaye.pinnate import Pinnate
 class CsvConnector(FileBasedConnector):
     engine_type = "csv://"
     optional_args = {
+        **FileBasedConnector.optional_args,
         "field_names": None,
         "required_fields": None,
         "expected_fields": None,
         "alias_fields": None,
         "quoting": None,
         "transform_map": {},
-        "encoding": None,
+        "encoding": "utf-8-sig",
         "delimiter": ",",
     }
     optional_engine_url_args = FileBasedConnector.optional_engine_url_args + ["start", "end"]
-    default_character_encoding = "utf-8-sig"
     write_mode_open_args = {"newline": "\n"}
 
     def __init__(self, *args, **kwargs):

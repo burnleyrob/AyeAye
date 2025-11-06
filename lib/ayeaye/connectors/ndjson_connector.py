@@ -15,8 +15,10 @@ from ayeaye.pinnate import Pinnate
 
 class NdjsonConnector(FileBasedConnector):
     engine_type = "ndjson://"
-    default_character_encoding = "utf-8-sig"
-    optional_args = {"encoding": None}
+    optional_args = {
+        **FileBasedConnector.optional_args,
+        "encoding": "utf-8-sig",
+    }
 
     def __init__(self, *args, **kwargs):
         """

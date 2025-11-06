@@ -77,8 +77,8 @@ class TestConnectorsCsv(unittest.TestCase):
         "specify character encoding in the URL and in engine params."
         encoding = "latin-1"
 
-        # c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH + ";encoding=" + encoding)
-        # self.assertEqual(encoding, c.encoding)
+        c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH + ";encoding=" + encoding)
+        self.assertEqual(encoding, c.encoding)
 
         c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH, encoding=encoding)
         self.assertEqual(encoding, c.encoding)

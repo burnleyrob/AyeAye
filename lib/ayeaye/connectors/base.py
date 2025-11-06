@@ -422,18 +422,19 @@ class FileBasedConnector(DataConnector):
     # class variables that can be defined by subclasses or left as are or overwritten with instance
     # variable.
     optional_engine_url_args = ["encoding"]  # list of str
-    default_character_encoding = None
     write_mode_open_args = {}
     # default is for files to be opened in text mode
     file_mode = "t"
     engine_pattern_expander_cls = FilesystemEnginePattern
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _reset(self):
         """
         Subclasses must call this within the constructor
         """
         self._file_handle = None
-        self._encoding = None
         self._engine_params = None
         self.file_size = None
 
@@ -455,11 +456,9 @@ class FileBasedConnector(DataConnector):
         """
 
         ep = self.ignition._decode_filesystem_engine_url(
-            self.engine_url, optional_args=self.optional_engine_url_args
+            self.engine_url,
+            optional_args=self.optional_engine_url_args,
         )
-
-        if "encoding" in ep:
-            self._encoding = ep.encoding
 
         return ep
 
@@ -556,9 +555,9 @@ class FileBasedConnector(DataConnector):
         """
         default encoding. 'sig' means don't include the unicode BOM
         """
-        if self._encoding is None:
-            ep = self.engine_params
-            self._encoding = ep.encoding if "encoding" in ep else self.default_character_encoding
+        # engine_url's 'encoding' param is optional, it takes precedence when set
+        if "encoding" in self.engine_params:
+            return self.engine_params.encoding
 
         return self._encoding
 

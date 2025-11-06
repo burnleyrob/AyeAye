@@ -9,7 +9,10 @@ from ayeaye.connectors.base import AccessMode, FileBasedConnector
 
 class UncookedConnector(FileBasedConnector):
     engine_type = "file://"
-    optional_args = {"file_mode": "t", "encoding": None}
+    optional_args = {
+        **FileBasedConnector.optional_args,
+        "file_mode": "t",
+    }
 
     def __init__(self, *args, **kwargs):
         """
