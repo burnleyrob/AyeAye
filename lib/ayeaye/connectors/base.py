@@ -427,9 +427,6 @@ class FileBasedConnector(DataConnector):
     file_mode = "t"
     engine_pattern_expander_cls = FilesystemEnginePattern
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _reset(self):
         """
         Subclasses must call this within the constructor
@@ -564,7 +561,8 @@ class FileBasedConnector(DataConnector):
     @encoding.setter
     def encoding(self, encoding):
         """
-        Cater for encoding being settable via engine params as well as via optional args.
+        This is used when encoding is set via engine optional args to cater for encoding also being
+        settable via engine params.
         """
         self._encoding = encoding
 

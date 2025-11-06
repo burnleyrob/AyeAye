@@ -222,7 +222,6 @@ class TestConnectorsCsv(unittest.TestCase):
     def test_delimiter(self):
         c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_UNUSUAL_DELIMITER, delimiter=";")
         r = next(iter(c))
-        # doesn't raise an exception as fields are exactly as given in file's header
         self.assertEqual(r.common_name, "Wild Boar")
         self.assertEqual(r.native_to, "Europe, North Africa, and much of Asia")
 
