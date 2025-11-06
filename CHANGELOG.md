@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.1.5] - 2025-11-06
+
+### Added
+- encoding can be a kwarg or within the engine_url with any :class:`FileBasedConnector`
+- allowed delimiter to be set for CsvConnector via optional args
+- thanks @burnleyrob
+
 ## [0.1.4] - 2025-07-07
 
 ### Fixed
