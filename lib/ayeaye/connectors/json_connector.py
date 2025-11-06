@@ -14,7 +14,10 @@ from ayeaye.pinnate import Pinnate
 class JsonConnector(FileBasedConnector):
     engine_type = "json://"
     optional_engine_url_args = FileBasedConnector.optional_engine_url_args + ["indent"]
-    default_character_encoding = "utf-8-sig"
+    optional_args = {
+        **FileBasedConnector.optional_args,
+        "encoding": "utf-8-sig",
+    }
 
     def __init__(self, *args, **kwargs):
         """

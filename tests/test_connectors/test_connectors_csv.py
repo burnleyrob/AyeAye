@@ -16,6 +16,7 @@ EXAMPLE_CSV_MICE = os.path.join(TEST_DATA_PATH, "mice_no_heading.csv")
 EXAMPLE_CSV_SQUIRRELS = os.path.join(TEST_DATA_PATH, "squirrels_no_heading.csv")
 EXAMPLE_CSV_DUPLICATE_FIELDNAMES = os.path.join(TEST_DATA_PATH, "duplicate_field_names.csv")
 EXAMPLE_CSV_QUOTED = os.path.join(TEST_DATA_PATH, "venomous_spiders.csv")
+EXAMPLE_CSV_UNUSUAL_DELIMITER = os.path.join(TEST_DATA_PATH, "pigs_unusual_delimiter.csv")
 
 
 class TestConnectorsCsv(unittest.TestCase):
@@ -64,15 +65,23 @@ class TestConnectorsCsv(unittest.TestCase):
         expected = "Goeldi's marmoset, Common squirrel monkey, Crab-eating macaque"
         assert expected == monkey_names
 
-    def test_csv_encoding(self):
+    def test_csv_encoding_default(self):
         """
-        Specify character encoding in the URL. This test doesn't ensure data conforms.
+        Test the default encoding for CsvConnector.
+        This test doesn't ensure data conforms.
         """
         c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH)
         self.assertEqual("utf-8-sig", c.encoding, "Unexpected default encoding")
 
-        c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH + ";encoding=latin-1")
-        self.assertEqual("latin-1", c.encoding, "Can't override default encoding")
+    def test_csv_encoding_settable(self):
+        "specify character encoding in the URL and in engine params."
+        encoding = "latin-1"
+
+        c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH + ";encoding=" + encoding)
+        self.assertEqual(encoding, c.encoding)
+
+        c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_PATH, encoding=encoding)
+        self.assertEqual(encoding, c.encoding)
 
     def test_csv_engine_decode(self):
         c = CsvConnector(engine_url="csv:///data/abc.csv")
@@ -209,6 +218,12 @@ class TestConnectorsCsv(unittest.TestCase):
         # missing field
         with self.assertRaises(ValueError):
             next(iter(c))
+
+    def test_delimiter(self):
+        c = CsvConnector(engine_url="csv://" + EXAMPLE_CSV_UNUSUAL_DELIMITER, delimiter=";")
+        r = next(iter(c))
+        self.assertEqual(r.common_name, "Wild Boar")
+        self.assertEqual(r.native_to, "Europe, North Africa, and much of Asia")
 
     def test_alias_fields_dictionary(self):
         c = CsvConnector(

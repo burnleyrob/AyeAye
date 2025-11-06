@@ -14,15 +14,17 @@ from ayeaye.pinnate import Pinnate
 class CsvConnector(FileBasedConnector):
     engine_type = "csv://"
     optional_args = {
+        **FileBasedConnector.optional_args,
         "field_names": None,
         "required_fields": None,
         "expected_fields": None,
         "alias_fields": None,
         "quoting": None,
         "transform_map": {},
+        "encoding": "utf-8-sig",
+        "delimiter": ",",
     }
     optional_engine_url_args = FileBasedConnector.optional_engine_url_args + ["start", "end"]
-    default_character_encoding = "utf-8-sig"
     write_mode_open_args = {"newline": "\n"}
 
     def __init__(self, *args, **kwargs):
@@ -62,6 +64,11 @@ class CsvConnector(FileBasedConnector):
                     written or the value yielded from the connector. See unittest
                     TestConnectorsCsv.test_transforms for and example of how to use this.
 
+            encoding (str) see superclass
+
+            delimiter (str)
+                    Used to separate fields.
+
         Connection information-
             engine_url format is
             csv://<filesystem absolute path>data_file.csv[;start=<line number>][;end=<line number>][;encoding=<character encoding>]
@@ -74,7 +81,6 @@ class CsvConnector(FileBasedConnector):
         # schemas are implemented. For now, keep track so loading fieldnames from file doesn't
         # make a :meth:`_reset`
         self.base_field_names = copy.copy(self.field_names)
-        self.delimiter = ","
 
         if self.access == AccessMode.READWRITE:
             raise NotImplementedError("Read+Write access not yet implemented")
