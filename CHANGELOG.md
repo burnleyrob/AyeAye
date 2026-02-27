@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - nothing
 
+## [0.1.6] - 2026-02-27
+
+### Added
+- a tidier way to use the context resolver in MultiConnectorNewDataset to build a resolved variable
+without creating a new dataset. It's cleaner when testing exist-before-create.
+- optional casts to RestfulConnector
+
 ## [0.1.5] - 2025-11-06
 
 ### Added

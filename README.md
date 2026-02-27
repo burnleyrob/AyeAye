@@ -37,7 +37,7 @@ There are more examples in the [Aye-Aye-Recipes](https://github.com/Aye-Aye-Dev/
 
 ## Overview
 
-An Aye Aye ETL *model* inherits from `ayeaye.model` and uses class level variables to declare *connectors* to the data it acts on.
+An Aye Aye ETL *model* inherits from `ayeaye.Model` and uses class level variables to declare *connectors* to the data it acts on.
 
 Example:-
 
@@ -52,7 +52,7 @@ When instantiated, `self.poisonous_animals` will be a *dataset* that ETL operati
 
 The `engine_url` parameter passed to `ayeaye.Connect` is specifying the dataset type JSON in this case) and exact location for the data (`data/poisonous_animals.json` is a relative file path).
 
-Instead of `engine_url` you could also specify a `ref` and this uses the data catalogue to lookup the `engine_url`. (TODO this feature is coming soon!). When used this way, `ayeaye.Connect` is responsible for resolving the `ref` to an `engine_url` and passing this to a subclass of `ayeaye.connectors.base.DataConnector` which can read and maybe write this data type.
+Instead of `engine_url` you could also specify a `ref` and this uses the data catalogue to look up the `engine_url`. (TODO this feature is coming soon!). When used this way, `ayeaye.Connect` is responsible for resolving the `ref` to an `engine_url` and passing this to a subclass of `ayeaye.connectors.base.DataConnector` which can read and maybe write this data type.
 
 
 ## Unit tests
@@ -88,11 +88,11 @@ pipenv install "ayeaye[api]"
 pipenv install "ayeaye[api,aws,compression]"
 ```
 
-| Label | Functionality |
-| --- | --- |
-| api | Restful JSON via http(s) |
-| aws | File based connectors can use Amazon Web Service S3 file storage |
-| compression | On the fly compression for file based connectors |
+| Label       | Functionality                                                    |
+|-------------|------------------------------------------------------------------|
+| api         | Restful JSON via http(s)                                         |
+| aws         | File based connectors can use Amazon Web Service S3 file storage |
+| compression | On the fly compression for file based connectors                 |
 
 
 ## License

@@ -31,10 +31,39 @@ class MultiConnectorNewDataset:
         """
         self.template = template
 
-    def __call__(self, parent_connector, *args, **kwargs):
+    def local_resolve(self, *args, **kwargs):
         """
-        @param kwargs: dict with strings for both key and value
-            These will be substituted into `self.template`
+        Just using *args and **kwargs resolve template variables in `self.template`.
+
+        This method is useful when the final engine_url needs to be known before decision is made
+        to create a new dataset connection. The return from this method is a string which could
+        still have template variables that can only be resolved by the `ayeaye.connector_resolver`
+        global resolver.
+
+        e.g.
+        A new dataset should only be created if the existing file doesn't exist.
+
+        output_file_template = "csv://{datasets_path}/{product_name}_parts.csv"
+        new_datasets_builder = MultiConnectorNewDataset(template=output_file_template)
+        components_doc = ayeaye.Connect(
+            engine_url=output_file_template.replace("{dataset_name}", "*"),
+            method_overlay=(new_datasets_builder, "new_dataset"),
+            access=ayeaye.AccessMode.WRITE,
+        )
+        ...
+
+        conditional_engine_url = new_datasets_builder.local_resolve(product_name="widget")
+
+        with ayeaye.connect_resolve.connector_resolver.context(datasets_path="/data/parts/"):
+            final_engine_url = ayeaye.connector_resolver.resolve(conditional_engine_url)
+
+        if final_engine_url not in [d.engine_url for d in components_doc.data]:
+            # Dataset not already on disk
+            components = components_doc.new_dataset(product_name="widget")
+            components.add({"name": "hello", "product_code": "new dataset"})
+
+
+        @return: (str)
         """
         resolved_template = self.template
         for k, v in kwargs.items():
@@ -43,5 +72,13 @@ class MultiConnectorNewDataset:
                 # can't use .format as not all template fields are being replaced
                 resolved_template = resolved_template.replace(template_field, v)
 
+        return resolved_template
+
+    def __call__(self, parent_connector, *args, **kwargs):
+        """
+        @param kwargs: dict with strings for both key and value
+            These will be substituted into `self.template`
+        """
+        resolved_template = self.local_resolve(*args, **kwargs)
         new_dataset_connection = parent_connector.add_engine_url(resolved_template)
         return new_dataset_connection

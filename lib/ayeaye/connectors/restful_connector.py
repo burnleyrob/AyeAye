@@ -3,6 +3,7 @@ Created on 14 Jul 2022
 
 @author: si
 """
+
 import json
 from time import time
 
@@ -24,7 +25,11 @@ class RestfulConnector(DataConnector):
     }
 
     class RawData:
-        "Wrapper class to indicate data shouldn't be cast to JSON"
+        """
+        Wrapper class to indicate data shouldn't be cast to JSON.
+
+        See :meth:`RestfulConnector.post` for an example.
+        """
 
         def __init__(self, data):
             """
@@ -184,7 +189,7 @@ class RestfulConnector(DataConnector):
         else:
             return self.engine_url + url
 
-    def get(self, url, params=None):
+    def get(self, url, params=None, return_format="pinnate"):
         """
         HTTP GET
 
@@ -197,6 +202,12 @@ class RestfulConnector(DataConnector):
                         c.get("/xyz", {'q':'search_term'})
                          becomes
                         https://api.mystuff.com/abc/xyz?q=search_term
+
+        @param return_format: (str) - Parse JSON response into this format.
+            Either-
+            - 'native' - `json load` into native python types.
+            - 'pinnate' (default) - see :class:`ayeaye.Pinnate`
+            - 'raw' (str) - request.text - no parsing
 
         @return: :class:`Pinnate` object representing the JSON response
         """
@@ -219,7 +230,16 @@ class RestfulConnector(DataConnector):
                 raise RestfulConnectorConnectionError(msg, details=str(c))
 
         self._post_request_checks(r)
-        serialised_request = Pinnate(r.json())
+
+        if return_format == "native":
+            serialised_request = r.json()
+        elif return_format == "pinnate":
+            serialised_request = Pinnate(r.json())
+        elif return_format == "raw":
+            serialised_request = r.text
+        else:
+            raise ValueError("Unknown return format")
+
         return serialised_request
 
     def post(self, url, data):
